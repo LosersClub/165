@@ -1,3 +1,4 @@
+#include <process.h>
 #include <stdio.h>
 #define MAXN 10000
 #define MAXK 100
@@ -19,11 +20,13 @@ main(){
 			flag = doalg( n, k, Best);
 			if (flag==0) {
 				printf(" *** flagged error at loop=%d\n",loop);
+				system("pause");
 				return(0);
 			}
 			ct = COMPARE(-1,k,Best);
 			if (ct<=0) {
 				printf(" *** error at loop=%d\n",loop);
+				system("pause");
 				return(0);
 			}
 			if (ct>biggest) biggest=ct;
@@ -33,4 +36,5 @@ main(){
 			N[round],K[round],biggest,(1.0*total)/1000);
 		fflush(stdout);
 	}
+	system("pause");
 }

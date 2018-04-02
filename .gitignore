@@ -362,3 +362,5 @@ ASALocalRun/
 
 # VS Solutions
 *.sln
+
+build/
