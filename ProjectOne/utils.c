@@ -28,3 +28,15 @@ void swap(int* a, int* b) {
   *a = *b;
   *b = temp;
 }
+
+int sign(double a) {
+  return a < 0 ? -1 : 1;
+}
+
+int max(double a, double b) {
+  return a < b ? (int)b : (int)a;
+}
+
+int min(double a, double b) {
+  return a < b ? (int)a : (int)b;
+}

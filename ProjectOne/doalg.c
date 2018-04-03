@@ -21,14 +21,14 @@ int doalg(int n, int k, int* out) {
     }
   }
 
-  for (int i = 0; i < nl; i++) {
-    printf("%d ", test[i]);
-  }
+  //for (int i = 0; i < nl; i++) {
+  //  printf("%d ", test[i]);
+  //}
   printf("\n");
 
   int r = nl - 1;
   int l = 0;
-  floydExchange(test, indices, l, r, k1);
+  select(test, indices, l, r, k1);
   printf("%dth: %d", k1 + 1, test[indices[k1]]);
   insertionSortDebug(test, indices, 0, k1);
   
