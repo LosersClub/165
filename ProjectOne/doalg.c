@@ -1,62 +1,57 @@
+//#define DEBUG
+#define DEBUG_SIZE 10000
+#define DEBUG_K 40
+
+#include <math.h>
+
 #include "utils.c"
 #include "sorts.c"
 #include "floyd_select.c"
-#include "floyd_select_debug.c"
 
-int doalg(int n, int k, int* out) {
-  int maxSize = 10000;
-  int indices[10000];
-  for (int i = 0; i < maxSize; i++) {
-    indices[i] = i;
-  }
+static int  indices[COMPARELIMIT];
+static bool init = false;
 
+int doalgFinal(int n, int k, int* out) {
   int right = n - 1;
   int left = 0;
-  select(indices, left, right, k-1);
-  insertionSort(indices, left, k-1);
+  select(indices, left, right, k - 1);
+  insertionSort(indices, left, k - 1);
 
   for (int i = 0; i < k; i++) {
     out[i] = indices[i] + 1;
   }
-
   return 1;
 }
 
-int doalg2(int n, int k, int* out) {
-  //dshrandom(1234); // Random Seed
-  int test[10000];
-  int indices[10000];
-  int nl = 100;
-  int k1 = 10;
-  for (int i = 0; i < nl; i++) {
-    indices[i] = i;
-    test[i] = i + 1;
-  }
-  for (int i = nl; i > 0; i--) {
-    int j = i * dshrandom(0) + 1;
-    if (j != i) {
-      int t = test[i - 1];
-      test[i - 1] = test[j - 1];
-      test[j - 1] = t;
+int doalg(int n, int k, int* out) {
+  if (init == false) {
+    init = true;
+    for (int i = 0; i < COMPARELIMIT; i++) {
+      indices[i] = i;
     }
   }
 
-  //for (int i = 0; i < nl; i++) {
-  //  printf("%d ", test[i]);
-  //}
-  printf("\n");
-
-  int r = nl - 1;
-  int l = 0;
-  selectDebug(test, indices, l, r, k1);
-  printf("%dth: %d", k1 + 1, test[indices[k1]]);
-  insertionSortDebug(test, indices, 0, k1);
-  
-  printf("\nCompares: %d\n", compareCount);
-  for (int i = 0; i <= k1; i++) {
-    printf("%d ", test[indices[i]]);
+#ifdef DEBUG
+  for (int i = 0; i < DEBUG_SIZE; i++) {
+    debug[i] = i + 1;
   }
-  printf("\n");
-
+  for (int i = DEBUG_SIZE; i > 0; i--) {
+    int j = i * dshrandom(0) + 1;
+    if (j != i) {
+      int t = debug[i - 1];
+      debug[i - 1] = debug[j - 1];
+      debug[j - 1] = t;
+    }
+  }
+  int best[DEBUG_K];
+  doalgFinal(DEBUG_SIZE, DEBUG_K, best);
+  printf("Best: ");
+  for (int i = 0; i < DEBUG_K; i++) {
+    printf("%d ", debug[best[i] - 1]);
+  }
+  printf("\nComparisons: %d\n", compareCount);
   return 0;
+#endif
+  
+  return doalgFinal(n, k, out);
 }

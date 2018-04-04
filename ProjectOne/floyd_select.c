@@ -1,4 +1,3 @@
-#include <math.h>
 void floydExchange(int* indices, int* left, int* right, int k);
 void wirthExchange(int* indices, int* left, int* right, int k);
 
