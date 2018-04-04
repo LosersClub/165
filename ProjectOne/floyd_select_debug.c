@@ -1,8 +1,8 @@
 #include <math.h>
-void floydExchange(int* indices, int* left, int* right, int k);
-void wirthExchange(int* indices, int* left, int* right, int k);
+void floydExchangeDebug(int* array, int* indices, int* left, int* right, int k);
+void wirthExchangeDebug(int* array, int* indices, int* left, int* right, int k);
 
-select(int* indices, int left, int right, int k) {
+selectDebug(int* array, int* indices, int left, int right, int k) {
   int minSize = k;
   double splitConstant = 0.2;
   while (left < right) {
@@ -14,29 +14,35 @@ select(int* indices, int left, int right, int k) {
       double sd = splitConstant * sqrt(z*s*(n - s) / n) * sign(i - n / 2);
       int newLeft = max(left, k - (i*s / n) + sd);
       int newRight = min(right, k + ((n - i)*s / n) + sd);
-      select(indices, newLeft, newRight, k);
+      selectDebug(array, indices, newLeft, newRight, k);
     }
-    wirthExchange(indices, &left, &right, k);
+    wirthExchangeDebug(array, indices, &left, &right, k);
   }
 }
 
-void floydExchange(int* indices, int* left, int* right, int k) {
+void floydExchangeWhileDebug(int* array, int* indices, int* left, int* right, int k) {
+  while (left < right) {
+    floydExchange(array, indices, left, right, k);
+  }
+}
+
+void floydExchangeDebug(int* array, int* indices, int* left, int* right, int k) {
   int t = indices[k];
   int i = *left;
   int j = *right;
   swap(&indices[*left], &indices[k]);
-  if (compare(indices[*right], t) < 0) {
+  if (compareDebug(array, indices[*right], t) < 0) {
     swap(&indices[*left], &indices[*right]);
   }
   while (i < j) {
     swap(&indices[i], &indices[j]);
     i++;
     j--;
-    while (compare(indices[i], t) > 0) {
+    while (compareDebug(array, indices[i], t) > 0) {
       i++;
     }
 
-    while (compare(indices[j], t) < 0) {
+    while (compareDebug(array, indices[j], t) < 0) {
       j--;
     }
   }
@@ -55,16 +61,22 @@ void floydExchange(int* indices, int* left, int* right, int k) {
   }
 }
 
-void wirthExchange(int* indices, int* left, int* right, int k) {
+void wirthExchangeWhileDebug(int* array, int* indices, int left, int right, int k) {
+  while (left < right) {
+    wirthExchange(array, indices, left, right, k);
+  }
+}
+
+void wirthExchangeDebug(int* array, int* indices, int* left, int* right, int k) {
   int t = indices[k];
   int i = *left;
   int j = *right;
   do {
-    while (compare(indices[i], t) > 0) {
+    while (compareDebug(array, indices[i], t) > 0) {
       i++;
     }
 
-    while (compare(indices[j], t) < 0) {
+    while (compareDebug(array, indices[j], t) < 0) {
       j--;
     }
     if (i <= j) {

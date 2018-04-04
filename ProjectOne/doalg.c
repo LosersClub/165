@@ -1,13 +1,33 @@
 #include "utils.c"
 #include "sorts.c"
 #include "floyd_select.c"
+#include "floyd_select_debug.c"
 
 int doalg(int n, int k, int* out) {
+  int maxSize = 10000;
+  int indices[10000];
+  for (int i = 0; i < maxSize; i++) {
+    indices[i] = i;
+  }
+
+  int right = n - 1;
+  int left = 0;
+  select(indices, left, right, k-1);
+  insertionSort(indices, left, k-1);
+
+  for (int i = 0; i < k; i++) {
+    out[i] = indices[i] + 1;
+  }
+
+  return 1;
+}
+
+int doalg2(int n, int k, int* out) {
   //dshrandom(1234); // Random Seed
   int test[10000];
   int indices[10000];
-  int nl = 10000;
-  int k1 = 39;
+  int nl = 100;
+  int k1 = 10;
   for (int i = 0; i < nl; i++) {
     indices[i] = i;
     test[i] = i + 1;
@@ -28,7 +48,7 @@ int doalg(int n, int k, int* out) {
 
   int r = nl - 1;
   int l = 0;
-  select(test, indices, l, r, k1);
+  selectDebug(test, indices, l, r, k1);
   printf("%dth: %d", k1 + 1, test[indices[k1]]);
   insertionSortDebug(test, indices, 0, k1);
   
