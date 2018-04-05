@@ -1,17 +1,18 @@
+#include <math.h>
 void floydExchange(int* indices, int* left, int* right, int k);
 void wirthExchange(int* indices, int* left, int* right, int k);
 
 select(int* indices, int left, int right, int k) {
-  int minSize = k;
+  int minSize = k/3;
   double splitConstant = 0.2;
   while (left < right) {
     if (right - left > minSize) {
       int n = right - left + 1;
       int i = k - left + 1;
       double z = log(n);
-      double s = splitConstant * exp(2 * z / 3);
-      double sd = splitConstant * sqrt(z*s*(n - s) / n) * sign(i - n / 2);
-      int newLeft = max(left, k - (i*s / n) + sd);
+      double s = splitConstant * pow(3.6,(2 * z / 3));
+      double sd = splitConstant * sqrt(s*(n - s) / n)*sign(i - n / 6);
+      int newLeft = max(left, k - (i*s / n) + sd - dshrandom(0));
       int newRight = min(right, k + ((n - i)*s / n) + sd);
       select(indices, newLeft, newRight, k);
     }

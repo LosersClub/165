@@ -1,3 +1,4 @@
+//
 //#define DEBUG
 #define DEBUG_SIZE 10000
 #define DEBUG_K 40
@@ -15,7 +16,7 @@ int doalgFinal(int n, int k, int* out) {
   int right = n - 1;
   int left = 0;
   select(indices, left, right, k - 1);
-  insertionSort(indices, left, k - 1);
+  mergeSort(indices, left, k - 1);
 
   for (int i = 0; i < k; i++) {
     out[i] = indices[i] + 1;
