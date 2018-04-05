@@ -12,7 +12,7 @@ select(int* indices, int left, int right, int k) {
       double z = log(n);
       double s = splitConstant * pow(3.6,(2 * z / 3));
       double sd = splitConstant * sqrt(s*(n - s) / n)*sign(i - n / 6);
-      int newLeft = max(left, k - (i*s / n) + sd - dshrandom(0));
+      int newLeft = max(left, k - (i*s / n) + sd);
       int newRight = min(right, k + ((n - i)*s / n) + sd);
       select(indices, newLeft, newRight, k);
     }

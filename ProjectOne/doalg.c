@@ -1,4 +1,3 @@
-//
 //#define DEBUG
 #define DEBUG_SIZE 10000
 #define DEBUG_K 40
@@ -8,6 +7,7 @@
 #include "utils.c"
 #include "sorts.c"
 #include "floyd_select.c"
+#include "quick_select.c"
 
 static int  indices[COMPARELIMIT];
 static bool init = false;
@@ -17,6 +17,9 @@ int doalgFinal(int n, int k, int* out) {
   int left = 0;
   select(indices, left, right, k - 1);
   mergeSort(indices, left, k - 1);
+  //select(indices, left, right, k - 1);
+  /*quickSelect(baseline, indices, left, right, k - 1);
+  insertionSort(indices, left, k - 1);*/
 
   for (int i = 0; i < k; i++) {
     out[i] = indices[i] + 1;
