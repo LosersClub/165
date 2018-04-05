@@ -45,3 +45,46 @@ int max(double a, double b) {
 int min(double a, double b) {
   return a < b ? (int)a : (int)b;
 }
+
+void median3(int* indices, int a, int b, int c) {
+  if (compare(indices[a], indices[c]) < 0) {
+    swap(&indices[a], &indices[c]);
+  }
+  if (compare(indices[a], indices[b]) < 0) {
+    swap(&indices[a], &indices[b]);
+  }
+  if (compare(indices[c], indices[b] < 0)) {
+    swap(&indices[c], &indices[b]);
+  }
+}
+
+void median5(int* indices, int i) {
+  int* a = &indices[i];
+  int* b = &indices[i + 1];
+  int* c = &indices[i + 2];
+  int* d = &indices[i + 3];
+  int* e = &indices[i + 4];
+  if (compare(*c, *a) > 0) {
+    swap(a, c);
+  }
+  if (compare(*d, *b) > 0) {
+    swap(b, d);
+  }
+  if (compare(*d, *c) > 0) {
+    swap(c, d);
+    swap(a, b);
+  }
+  if (compare(*e, *b) > 0) {
+    swap(b, e);
+  }
+  if (compare(*e, *c) > 0) {
+    swap(c, e);
+    if (compare(*c, *a) > 0) {
+      swap(a, c);
+    }
+  } else {
+    if (compare(*c, *b) > 0) {
+      swap(b, c);
+    }
+  }
+}
