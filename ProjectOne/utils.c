@@ -70,6 +70,33 @@ void lowerMedian4(int* indices, int a, int b, int c, int d) {
   }
 }
 
+void medianOf5(int* indices, int a, int b, int c, int d, int e) {
+  if (compare(indices[c], indices[a]) > 0) {
+    swap(&indices[a], &indices[c]);
+  }
+  if (compare(indices[d], indices[b]) > 0) {
+    swap(&indices[b], &indices[d]);
+  }
+  if (compare(indices[d], indices[c]) > 0) {
+    swap(&indices[c], &indices[d]);
+    swap(&indices[a], &indices[b]);
+  }
+  if (compare(indices[e], indices[b]) > 0) {
+    swap(&indices[b], &indices[e]);
+  }
+  if (compare(indices[e], indices[c]) > 0) {
+    swap(&indices[c], &indices[e]);
+    if (compare(indices[c], indices[a]) > 0) {
+      swap(&indices[a], &indices[c]);
+    }
+  }
+  else {
+    if (compare(indices[c], indices[b]) > 0) {
+      swap(&indices[b], &indices[c]);
+    }
+  }
+}
+
 void median5(int* indices, int i) {
   int* a = &indices[i];
   int* b = &indices[i + 1];

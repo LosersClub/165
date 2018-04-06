@@ -120,6 +120,10 @@ int random(int* indices, int left, int right, int k) {
   return hPartition(indices, left, right, randomPivot(left, right));
 }
 
+int median(int* indices, int left, int right, int k) {
+  return hPartition(indices, left, right, left + (right - left + 1) / 2);
+}
+
 int baseline(int* indices, int left, int right, int k) {
   int n = right - left + 1;
   if (n < 5) {
@@ -137,6 +141,23 @@ int baseline(int* indices, int left, int right, int k) {
   quickSelect(baseline, indices, left, j, left + j / 2);
   return hPartition(indices, left, right, left + j / 2);
 }
+
+int baselineImproved(int* indices, int left, int right, int k) {
+  int n = right - left + 1;
+  if (n < 5) {
+    return hPartition(indices, left, right, left + n / 2);
+  }
+  int f = n / 5;
+  int i = 0;
+  for (int j = left + 2 * f; j < left + 3 * f; j++) {
+    medianOf5(indices, i, i + 1, j, 3*f + i, 3*f + i + 1);
+    i += 2;
+  }
+  int newLeft = left + 2 * f;
+  quickSelect(baselineImproved, indices, newLeft, left + 3 * f - 1, left + f / 2);
+  return expandPartition(indices, newLeft, newLeft + f / 2, left + 3 * f - 1, left, right);
+}
+
 
 int repeatedStepFarLeft(int* indices, int left, int right, int k) {
   int n = right - left + 1;
