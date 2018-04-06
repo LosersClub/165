@@ -46,6 +46,8 @@ int min(double a, double b) {
   return a < b ? (int)a : (int)b;
 }
 
+
+// TODO: Reduce comparisons?
 void median3(int* indices, int a, int b, int c) {
   if (compare(indices[a], indices[c]) < 0) {
     swap(&indices[a], &indices[c]);
@@ -55,6 +57,16 @@ void median3(int* indices, int a, int b, int c) {
   }
   if (compare(indices[c], indices[b] < 0)) {
     swap(&indices[c], &indices[b]);
+  }
+}
+
+void lowerMedian4(int* indices, int a, int b, int c, int d) {
+  median3(indices, a, b, c);
+  if (compare(indices[d], indices[b] > 0)) {
+    swap(&indices[b], &indices[d]);
+    if (compare(indices[b], indices[a] > 0)) {
+      swap(&indices[b], &indices[a]);
+    }
   }
 }
 

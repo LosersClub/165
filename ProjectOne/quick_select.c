@@ -90,23 +90,73 @@ int lPartition(int* indices, int left, int right, int pivot) {
   return swapIndex;
 }
 
+int expandPartition(int* indices, int a, int p, int b, int left, int right) {
+  int i = left;
+  int j = right;
+  while (1) {
+    while (i < a && compare(indices[i], indices[p]) > 0) {
+      i++;
+    }
+    while (j > b && compare(indices[j], indices[p]) < 0) {
+      j--;
+    }
+    if (i == a || j == b) {
+      break;
+    }
+    swap(&indices[i], &indices[j]);
+    i++;
+    j--;
+  }
+  if (i != a) {
+    return hPartition(indices, i, a-1, p);
+  }
+  if (j != b) {
+    return hPartition(indices, b, j, p);
+  }
+  return p;
+}
+
 int random(int* indices, int left, int right, int k) {
   return hPartition(indices, left, right, randomPivot(left, right));
 }
 
 int baseline(int* indices, int left, int right, int k) {
   int n = right - left + 1;
-  if (n < 3) {
-    return hPartition(indices, left, right, n / 2);
+  if (n < 5) {
+    return hPartition(indices, left, right, left + n / 2);
   }
-  int i = 0;
+  int i = left;
   int j = 0;
-  while (i + 2 < n) {
-    median3(indices, i, i + 1, i + 2);
-    swap(&indices[i + 1], &indices[j]);
-    i += 3;
+  while (i + 4 < n) {
+    median5(indices, i);
+    swap(&indices[i + 2], &indices[left + j]);
+    i += 5;
     j++;
   }
-  quickSelect(baseline, indices, left, j, j / 2);
-  return hPartition(indices, left, right, j / 2);
+
+  quickSelect(baseline, indices, left, j, left + j / 2);
+  return hPartition(indices, left, right, left + j / 2);
+}
+
+int repeatedStepFarLeft(int* indices, int left, int right, int k) {
+  int n = right - left + 1;
+  if (n < 12) {
+    return hPartition(indices, left, right, left + n / 2);
+  }
+  int f = n / 4;
+  for (int i = left + f; i < left + 2 * f; i++) {
+    lowerMedian4(indices, i - f, i, i + f, i + 2 * f);
+  }
+  int f2 = f / 3;
+  for (int i = left + f; i < left + f + f2; i++) {
+    if (compare(indices[i + f2], indices[i]) > 0) {
+      swap(&indices[i + f2], &indices[i]);
+    }
+    if (compare(indices[i + 2 * f2], indices[i]) > 0) {
+      swap(&indices[i + 2 * f2], &indices[i]);
+    }
+  }
+  int newLeft = left + f;
+  quickSelect(repeatedStepFarLeft, indices, newLeft, newLeft + f2, newLeft + (k - left)*f2 / n);
+  return expandPartition(indices, newLeft, newLeft + (k - left)*f2/n, newLeft+f2-1, left, right);
 }
