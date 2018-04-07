@@ -1,6 +1,6 @@
 //#define DEBUG
-#define DEBUG_SIZE 10000
-#define DEBUG_K 40
+#define DEBUG_SIZE 100
+#define DEBUG_K 10
 
 #include <math.h>
 
@@ -9,6 +9,7 @@
 #include "floyd_select.c"
 #include "quick_select.c"
 #include "heap_select.c"
+#include "greedy_select.c"
 
 static int  indices[COMPARELIMIT];
 static bool init = false;
@@ -16,7 +17,7 @@ static bool init = false;
 int doalgFinal(int n, int k, int* out) {
   int right = n - 1;
   int left = 0;
-  heap_select_max(indices, k - 1, n);
+  greedySelect(indices, k - 1, n);
   //select(indices, left, right, k - 1);
   //mergeSort(indices, left, k - 1);
   //select(indices, left, right, k - 1);
