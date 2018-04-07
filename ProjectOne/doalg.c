@@ -8,6 +8,7 @@
 #include "sorts.c"
 #include "floyd_select.c"
 #include "quick_select.c"
+#include "heap_select.c"
 
 static int  indices[COMPARELIMIT];
 static bool init = false;
@@ -15,8 +16,9 @@ static bool init = false;
 int doalgFinal(int n, int k, int* out) {
   int right = n - 1;
   int left = 0;
-  select(indices, left, right, k - 1);
-  mergeSort(indices, left, k - 1);
+  heap_select_max(indices, k - 1, n);
+  //select(indices, left, right, k - 1);
+  //mergeSort(indices, left, k - 1);
   //select(indices, left, right, k - 1);
   /*quickSelect(baseline, indices, left, right, k - 1);
   insertionSort(indices, left, k - 1);*/
@@ -29,7 +31,7 @@ int doalgFinal(int n, int k, int* out) {
 
 int doalg(int n, int k, int* out) {
   if (init == false) {
-    init = true;
+    //init = true;
     for (int i = 0; i < COMPARELIMIT; i++) {
       indices[i] = i;
     }
