@@ -17,7 +17,7 @@ static bool init = false;
 
 int doalgFinal(int n, int k, int* out) {
   tournamentSelect(indices, n, k);
-  insertionSort(indices, 0, k - 1);
+  //insertionSort(indices, 0, k - 1);
 
   for (int i = 0; i < k; i++) {
     out[i] = indices[i] + 1;

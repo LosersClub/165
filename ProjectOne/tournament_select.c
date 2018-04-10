@@ -7,18 +7,17 @@ typedef struct _Node {
   int value;
 } Node;
 
+int getPathIndex(Node* array, int n, int value);
+
 tournamentSelect(int* indices, int n, int k) {
   int* out = malloc(k * sizeof(int));
 
   int numLeaves = n - k + 2;
   Node* array = malloc(sizeof(Node)*numLeaves);
-  for (int i = 0; i < numLeaves; i++) {
-    array[i].value = indices[i];
-  }
-
   int tempSize = numLeaves;
   Node** temp = malloc(tempSize * sizeof(Node*));
-  for (int i = 0; i < tempSize; i++) {
+  for (int i = 0; i < numLeaves; i++) {
+    array[i].value = indices[i];
     temp[i] = &array[i];
   }
 
@@ -47,13 +46,7 @@ tournamentSelect(int* indices, int n, int k) {
     tempSize = newSize;
     free(kill);
   }
-  int pathIndex = 0;
-  for (int i = 0; i < numLeaves; i++) {
-    if (array[i].value == temp[0]->value) {
-      pathIndex = i;
-      break;
-    }
-  }
+  int pathIndex = getPathIndex(array, numLeaves, temp[0]->value);
   free(temp);
 
   out[0] = array[pathIndex].value;
@@ -71,20 +64,24 @@ tournamentSelect(int* indices, int n, int k) {
       }
       node = *node.parent;
     }
-
-    out[outIndex++] = node.value;
-    for (int i = 0; i < numLeaves; i++) {
-      if (array[i].value == node.value) {
-        pathIndex = i;
-        break;
-      }
+    out[outIndex] = node.value;
+    if (node.value == indices[i]) {
+      binarySearch(out, 0, outIndex);
     }
+    outIndex++;
+    pathIndex = getPathIndex(array, numLeaves, node.value);
   }
 
   for (int i = 0; i < k; i++) {
     indices[i] = out[i];
   }
   free(out);
+}
 
-
+int getPathIndex(Node* array, int n, int value) {
+  for (int i = 0; i < n; i++) {
+    if (array[i].value == value) {
+      return i;
+    }
+  }
 }
