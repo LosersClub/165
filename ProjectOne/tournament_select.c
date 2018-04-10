@@ -40,6 +40,8 @@ tournamentSelect(int* indices, int n, int k) {
     }
     if (tempSize % 2 == 1) {
       newTemp[j] = temp[tempSize - 1];
+      int index = dshrandom(0)*(j); // 0 = 10495
+      swap(&newTemp[index], &newTemp[j]);
     }
     Node** kill = temp;
     temp = newTemp;
