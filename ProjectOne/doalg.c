@@ -1,6 +1,6 @@
 //#define DEBUG
-#define DEBUG_SIZE 100
-#define DEBUG_K 10
+#define DEBUG_SIZE 10000
+#define DEBUG_K 40
 
 #include <math.h>
 
@@ -10,19 +10,14 @@
 #include "quick_select.c"
 #include "heap_select.c"
 #include "greedy_select.c"
+#include "tournament_select.c"
 
 static int  indices[COMPARELIMIT];
 static bool init = false;
 
 int doalgFinal(int n, int k, int* out) {
-  int right = n - 1;
-  int left = 0;
-  greedySelect(indices, k - 1, n);
-  //select(indices, left, right, k - 1);
-  //mergeSort(indices, left, k - 1);
-  //select(indices, left, right, k - 1);
-  /*quickSelect(baseline, indices, left, right, k - 1);
-  insertionSort(indices, left, k - 1);*/
+  tournamentSelect(indices, n, k);
+  insertionSort(indices, 0, k - 1);
 
   for (int i = 0; i < k; i++) {
     out[i] = indices[i] + 1;
@@ -31,11 +26,11 @@ int doalgFinal(int n, int k, int* out) {
 }
 
 int doalg(int n, int k, int* out) {
+  for (int i = 0; i < COMPARELIMIT; i++) {
+    indices[i] = i;
+  }
   if (init == false) {
-    //init = true;
-    for (int i = 0; i < COMPARELIMIT; i++) {
-      indices[i] = i;
-    }
+    init = true;
   }
 
 #ifdef DEBUG

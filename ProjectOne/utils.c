@@ -6,6 +6,10 @@ static int compareCount = 0;
 typedef enum {false, true} bool;
 
 int compare(int x, int y) {
+  if (x < 0 || y < 0) {
+    return y < 0 ? 1 : -1;
+  }
+
 #ifdef DEBUG
   if (debug[x] > debug[y]) {
     compareCount++;
