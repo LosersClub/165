@@ -12,7 +12,7 @@ int getPathIndex(Node* array, int n, int value);
 tournamentSelect(int* indices, int n, int k) {
   int* out = malloc(k * sizeof(int));
 
-  int numLeaves = n - k + 2;
+  int numLeaves = n;
   Node* array = malloc(sizeof(Node)*numLeaves);
   int tempSize = numLeaves;
   Node** temp = malloc(tempSize * sizeof(Node*));
@@ -40,8 +40,9 @@ tournamentSelect(int* indices, int n, int k) {
     }
     if (tempSize % 2 == 1) {
       newTemp[j] = temp[tempSize - 1];
-      int index = dshrandom(0)*(j); // 0 = 10495
+      int index = 0; // 0 = 10495
       swap(&newTemp[index], &newTemp[j]);
+      j++;
     }
     Node** kill = temp;
     temp = newTemp;
@@ -53,8 +54,8 @@ tournamentSelect(int* indices, int n, int k) {
 
   out[0] = array[pathIndex].value;
   int outIndex = 1;
-  for (int i = numLeaves; i <= n; i++) {
-    array[pathIndex].value = i != n ? indices[i] : -1;
+  for (int i = numLeaves; outIndex < k; i++) {
+    array[pathIndex].value = i < n ? indices[i] : -1;
 
     Node node = array[pathIndex];
     while(node.parent != NULL) {
@@ -67,7 +68,7 @@ tournamentSelect(int* indices, int n, int k) {
       node = *node.parent;
     }
     out[outIndex] = node.value;
-    if (node.value == indices[i]) {
+    if (numLeaves < n && node.value == indices[i]) {
       binarySearch(out, 0, outIndex);
     }
     outIndex++;
