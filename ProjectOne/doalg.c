@@ -2,37 +2,23 @@
 #define DEBUG_SIZE 10000
 #define DEBUG_K 40
 
+#include <stdlib.h>
 #include <math.h>
 
 #include "utils.c"
-#include "sorts.c"
-#include "floyd_select.c"
-#include "quick_select.c"
-#include "heap_select.c"
-#include "greedy_select.c"
 #include "tournament_select.c"
 
-static int  indices[COMPARELIMIT];
-static bool init = false;
-
 int doalgFinal(int n, int k, int* out) {
-  tournamentSelect(indices, n, k);
-  //insertionSort(indices, 0, k - 1);
+  tournamentSelect(n, k, out);
 
+  // Converting our 0-based to 1-based indexing for COMPARE.c
   for (int i = 0; i < k; i++) {
-    out[i] = indices[i] + 1;
+    out[i] += 1;
   }
   return 1;
 }
 
 int doalg(int n, int k, int* out) {
-  for (int i = 0; i < COMPARELIMIT; i++) {
-    indices[i] = i;
-  }
-  if (init == false) {
-    init = true;
-  }
-
 #ifdef DEBUG
   for (int i = 0; i < DEBUG_SIZE; i++) {
     debug[i] = i + 1;
