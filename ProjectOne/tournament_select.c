@@ -1,14 +1,21 @@
+// Anastasia Miles (90039862) 
+// Kyle Bartz (27024310)
+
+// Insert actually accurate description here.
+
+// A Node struct for nodes in the tree.
 typedef struct _Node {
   struct _Node* parent;
   struct _Node* leftChild;
   struct _Node* rightChild;
-  int compareTo;
+  int comparedTo;
   int value;
 } Node;
 
-Node* newNode(Node* left, Node* right);
-void freeNode(Node* node);
-int getPathIndex(Node* array, int n, int value);
+// Allocates and initializes a new Node struct
+Node* createNewNode(Node* left, Node* right);
+// Recursively frees the internal nodes of the tree
+void freeInternalNodes(Node* node);
 
 tournamentSelect(int n, int k, int* out) {
   int numLeaves = n;
@@ -26,13 +33,13 @@ tournamentSelect(int n, int k, int* out) {
   while (tempSize > 1) {
     int newSize = 0;
     for (int i = 0; i < tempSize - 1; i += 2) {
-      Node* parent = newNode(temp[i], temp[i+1]);
+      Node* parent = createNewNode(temp[i], temp[i+1]);
       if (compare(temp[i]->value, temp[i + 1]->value) > 0) {
         parent->value = temp[i]->value;
-        parent->compareTo = temp[i + 1]->value;
+        parent->comparedTo = temp[i + 1]->value;
       } else {
         parent->value = temp[i + 1]->value;
-        parent->compareTo =  temp[i]->value;
+        parent->comparedTo =  temp[i]->value;
       }
       temp[newSize++] = temp[i]->parent = temp[i + 1]->parent = parent;
     }
@@ -43,7 +50,7 @@ tournamentSelect(int n, int k, int* out) {
     }
     tempSize = newSize;
   }
-  int pathIndex = getPathIndex(array, numLeaves, temp[0]->value);
+  int pathIndex = temp[0]->value;
   Node* root = temp[0];
   free(temp);
 
@@ -58,8 +65,8 @@ tournamentSelect(int n, int k, int* out) {
     Node node = array[pathIndex];
     for (; node.parent != NULL; node = *node.parent) {
       node.parent->value = node.value;
-      if (compare(node.parent->value, node.parent->compareTo) < 0) {
-        swap(&node.parent->value, &node.parent->compareTo);
+      if (compare(node.parent->value, node.parent->comparedTo) < 0) {
+        swap(&node.parent->value, &node.parent->comparedTo);
       }
     }
 
@@ -70,15 +77,16 @@ tournamentSelect(int n, int k, int* out) {
     }
 
     outIndex++;
-    pathIndex = getPathIndex(array, numLeaves, node.value);
+    pathIndex = node.value;
   }
 
   // Free tree
-  freeNode(root);
+  freeInternalNodes(root);
   free(array);
 }
 
-Node* newNode(Node* left, Node* right) {
+// Allocates and initializes a new Node struct
+Node* createNewNode(Node* left, Node* right) {
   Node* out = malloc(sizeof(Node));
   out->parent = NULL;
   out->leftChild = left;
@@ -86,16 +94,17 @@ Node* newNode(Node* left, Node* right) {
   return out;
 }
 
-void freeNode(Node* node) {
+// Recursively deallocates the internal nodes of the tree
+void freeInternalNodes(Node* node) {
+  // Do not deallocate the bottom level (all the elements of the array)
+  // as this will cause repeated free's, and because a higher-level node
+  // points to values in the bottom level. This will cause issues with
+  // memory.
   if (node->leftChild->leftChild != NULL) {
-    freeNode(node->leftChild);
+    freeInternalNodes(node->leftChild);
   }
   if (node->rightChild->rightChild != NULL) {
-    freeNode(node->rightChild);
+    freeInternalNodes(node->rightChild);
   }
   free(node);
-}
-
-int getPathIndex(Node* array, int n, int value) {
-  return value;
 }
