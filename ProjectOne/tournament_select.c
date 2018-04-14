@@ -1,18 +1,24 @@
 typedef struct _Node {
   struct _Node* parent;
+  struct _Node* leftChild;
+  struct _Node* rightChild;
   int compareTo;
   int value;
 } Node;
 
+Node* newNode(Node* left, Node* right);
+void freeNode(Node* node);
 int getPathIndex(Node* array, int n, int value);
 
 tournamentSelect(int n, int k, int* out) {
   int numLeaves = n;
-  Node* array = malloc(numLeaves * sizeof(Node));
   int tempSize = numLeaves;
-  Node** temp = malloc(tempSize * sizeof(Node*));
+  Node* array = malloc(numLeaves * sizeof(Node));
+  Node** temp = malloc(tempSize  * sizeof(Node*));
   for (int i = 0; i < numLeaves; i++) {
     array[i].value = i;
+    array[i].leftChild = NULL;
+    array[i].rightChild = NULL;
     temp[i] = &array[i];
   }
 
@@ -20,7 +26,7 @@ tournamentSelect(int n, int k, int* out) {
   while (tempSize > 1) {
     int newSize = 0;
     for (int i = 0; i < tempSize - 1; i += 2) {
-      Node* parent = malloc(sizeof(Node));
+      Node* parent = newNode(temp[i], temp[i+1]);
       if (compare(temp[i]->value, temp[i + 1]->value) > 0) {
         parent->value = temp[i]->value;
         parent->compareTo = temp[i + 1]->value;
@@ -29,7 +35,6 @@ tournamentSelect(int n, int k, int* out) {
         parent->compareTo =  temp[i]->value;
       }
       temp[newSize++] = temp[i]->parent = temp[i + 1]->parent = parent;
-      parent->parent = NULL;
     }
 
     if (tempSize % 2 == 1) {
@@ -39,6 +44,7 @@ tournamentSelect(int n, int k, int* out) {
     tempSize = newSize;
   }
   int pathIndex = getPathIndex(array, numLeaves, temp[0]->value);
+  Node* root = temp[0];
   free(temp);
 
   // Add first winner to output
@@ -66,12 +72,30 @@ tournamentSelect(int n, int k, int* out) {
     outIndex++;
     pathIndex = getPathIndex(array, numLeaves, node.value);
   }
+
+  // Free tree
+  freeNode(root);
+  free(array);
+}
+
+Node* newNode(Node* left, Node* right) {
+  Node* out = malloc(sizeof(Node));
+  out->parent = NULL;
+  out->leftChild = left;
+  out->rightChild = right;
+  return out;
+}
+
+void freeNode(Node* node) {
+  if (node->leftChild->leftChild != NULL) {
+    freeNode(node->leftChild);
+  }
+  if (node->rightChild->rightChild != NULL) {
+    freeNode(node->rightChild);
+  }
+  free(node);
 }
 
 int getPathIndex(Node* array, int n, int value) {
-  for (int i = 0; i < n; i++) {
-    if (array[i].value == value) {
-      return i;
-    }
-  }
+  return value;
 }
