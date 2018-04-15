@@ -56,42 +56,55 @@ tournamentSelect(int n, int k, int* out) {
   free(leaves);
 }
 
+// Builds the initial tournament tree
 Node* buildTournamentTree(int numLeaves, Node** root, int* pathIndex) {
+  // Create the array of leaves
+  // helperArray will be used to build the new levels of the tree
   int currentLevelSize = numLeaves;
   Node* leaves = malloc(numLeaves * sizeof(Node));
-  Node** temp = malloc(currentLevelSize * sizeof(Node*));
+  Node** helperArray = malloc(currentLevelSize * sizeof(Node*));
   for (int i = 0; i < numLeaves; i++) {
     leaves[i].value = i;
     leaves[i].leftChild = NULL;
     leaves[i].rightChild = NULL;
-    temp[i] = &leaves[i];
+    helperArray[i] = &leaves[i];
   }
 
-  // Build initial tournament tree
+  // Repeat until we hit the root
   while (currentLevelSize > 1) {
-    int newSize = 0;
+    int newLevelSize = 0;
+    // For each pair of nodes in the current level, create and configure
+    // a parent node
     for (int i = 0; i < currentLevelSize - 1; i += 2) {
-      Node* parent = createNewNode(temp[i], temp[i + 1]);
-      if (compare(temp[i]->value, temp[i + 1]->value) > 0) {
-        parent->value = temp[i]->value;
-        parent->comparedTo = temp[i + 1]->value;
+      Node* parent = createNewNode(helperArray[i], helperArray[i + 1]);
+      if (compare(helperArray[i]->value, helperArray[i + 1]->value) > 0) {
+        parent->value = helperArray[i]->value;
+        parent->comparedTo = helperArray[i + 1]->value;
       }
       else {
-        parent->value = temp[i + 1]->value;
-        parent->comparedTo = temp[i]->value;
+        parent->value = helperArray[i + 1]->value;
+        parent->comparedTo = helperArray[i]->value;
       }
-      temp[newSize++] = temp[i]->parent = temp[i + 1]->parent = parent;
+      // Store this parent node in helperArray, starting from the left
+      // side of helperArray. In essence, helperArray is being continually
+      // updated to represent the new level being built.
+      helperArray[newLevelSize++] = helperArray[i]->parent = 
+        helperArray[i + 1]->parent = parent;
     }
-
+    // In the case where the current level's size is not a power of 2,
+    // move up the odd node. The swap helps keep the tree moderately
+    // balanced
     if (currentLevelSize % 2 == 1) {
-      temp[newSize] = temp[currentLevelSize - 1];
-      swap(&temp[0], &temp[newSize++]);
+      helperArray[newLevelSize] = helperArray[currentLevelSize - 1];
+      swap(&helperArray[0], &helperArray[newLevelSize++]);
     }
-    currentLevelSize = newSize;
+    // Set the new level size to be able to loop through helperArray
+    // properly
+    currentLevelSize = newLevelSize;
   }
-  *pathIndex = temp[0]->value;
-  *root = temp[0];
-  free(temp);
+  *pathIndex = helperArray[0]->value;
+  *root = helperArray[0];
+  free(helperArray);
   return leaves;
 }
 
