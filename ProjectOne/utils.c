@@ -6,6 +6,7 @@
 // 1-indexing (COMPARE.c). 
 // Also, -1 as an input value means that a comparison
 // is not necessary. Just return the other value.
+
 int compare(int x, int y) {
   if (x < 0 || y < 0) {
     return y < 0 ? 1 : -1;

@@ -9,7 +9,8 @@ int doalg(int n, int k, int* out) {
   tournamentSelect(n, k, out);
 
   // Converting our 0-based to 1-based indexing for COMPARE.c
-  for (int i = 0; i < k; i++) {
+  int i;
+  for (i = 0; i < k; i++) {
     out[i] += 1;
   }
   return 1;

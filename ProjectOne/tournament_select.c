@@ -46,7 +46,8 @@ void tournamentSelect(int n, int k, int* out) {
   out[0] = leaves[winningIndex].value;
 
   // Get the remaing k - 1 largest values.
-  for (int outIndex = 1; outIndex < k; outIndex++) {
+  int outIndex;
+  for (outIndex = 1; outIndex < k; outIndex++) {
     // Replace the winningIndex's value with -1, so that in the future
     // we don't waste comparisons. We already knew this was the max and
     // don't need to worry about it anymore.
@@ -82,7 +83,8 @@ Node* buildTournamentTree(int numLeaves, Node** root) {
   int currentLevelSize = numLeaves;
   Node* leaves = malloc(numLeaves * sizeof(Node));
   Node** helperArray = malloc(currentLevelSize * sizeof(Node*));
-  for (int i = 0; i < numLeaves; i++) {
+  int i;
+  for (i = 0; i < numLeaves; i++) {
     leaves[i].value = i;
     leaves[i].leftChild = NULL;
     leaves[i].rightChild = NULL;
@@ -94,7 +96,8 @@ Node* buildTournamentTree(int numLeaves, Node** root) {
     int newLevelSize = 0;
     // For each pair of nodes in the current level, create and configure
     // a parent node.
-    for (int i = 0; i < currentLevelSize - 1; i += 2) {
+    int i;
+    for (i = 0; i < currentLevelSize - 1; i += 2) {
       Node* parent = createNewNode(helperArray[i], helperArray[i + 1]);
       if (compare(helperArray[i]->value, helperArray[i + 1]->value) > 0) {
         parent->value = helperArray[i]->value;
@@ -115,7 +118,10 @@ Node* buildTournamentTree(int numLeaves, Node** root) {
     // balanced.
     if (currentLevelSize % 2 == 1) {
       helperArray[newLevelSize] = helperArray[currentLevelSize - 1];
-      swap(&helperArray[0], &helperArray[newLevelSize++]);
+      Node* temp = helperArray[0];
+      helperArray[0] = helperArray[newLevelSize];
+      helperArray[newLevelSize] = temp;
+      newLevelSize += 1;
     }
     // Set the new level size to be able to loop through helperArray
     // properly (the size decreases as we move up the tree).
