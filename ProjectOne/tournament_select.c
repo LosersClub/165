@@ -16,53 +16,24 @@ typedef struct _Node {
 Node* createNewNode(Node* left, Node* right);
 // Recursively frees the internal nodes of the tree
 void freeInternalNodes(Node* node);
+// Build the initial tournament tree
+Node* buildTournamentTree(int numLeaves, Node** root, int* pathIndex);
 
 tournamentSelect(int n, int k, int* out) {
+  int pathIndex;
   int numLeaves = n;
-  int tempSize = numLeaves;
-  Node* array = malloc(numLeaves * sizeof(Node));
-  Node** temp = malloc(tempSize  * sizeof(Node*));
-  for (int i = 0; i < numLeaves; i++) {
-    array[i].value = i;
-    array[i].leftChild = NULL;
-    array[i].rightChild = NULL;
-    temp[i] = &array[i];
-  }
-
-  // Build initial tournament tree
-  while (tempSize > 1) {
-    int newSize = 0;
-    for (int i = 0; i < tempSize - 1; i += 2) {
-      Node* parent = createNewNode(temp[i], temp[i+1]);
-      if (compare(temp[i]->value, temp[i + 1]->value) > 0) {
-        parent->value = temp[i]->value;
-        parent->comparedTo = temp[i + 1]->value;
-      } else {
-        parent->value = temp[i + 1]->value;
-        parent->comparedTo =  temp[i]->value;
-      }
-      temp[newSize++] = temp[i]->parent = temp[i + 1]->parent = parent;
-    }
-
-    if (tempSize % 2 == 1) {
-      temp[newSize] = temp[tempSize - 1];
-      swap(&temp[0], &temp[newSize++]);
-    }
-    tempSize = newSize;
-  }
-  int pathIndex = temp[0]->value;
-  Node* root = temp[0];
-  free(temp);
+  Node* root = NULL;
+  Node* leaves = buildTournamentTree(numLeaves, &root, &pathIndex);
 
   // Add first winner to output
-  out[0] = array[pathIndex].value;
+  out[0] = leaves[pathIndex].value;
   int outIndex = 1;
 
   // Get the remaing k - 1 largest values.
   for (int i = numLeaves; outIndex < k; i++) {
-    array[pathIndex].value = i < n ? i : -1;
+    leaves[pathIndex].value = i < n ? i : -1;
 
-    Node node = array[pathIndex];
+    Node node = leaves[pathIndex];
     for (; node.parent != NULL; node = *node.parent) {
       node.parent->value = node.value;
       if (compare(node.parent->value, node.parent->comparedTo) < 0) {
@@ -82,7 +53,46 @@ tournamentSelect(int n, int k, int* out) {
 
   // Free tree
   freeInternalNodes(root);
-  free(array);
+  free(leaves);
+}
+
+Node* buildTournamentTree(int numLeaves, Node** root, int* pathIndex) {
+  int currentLevelSize = numLeaves;
+  Node* leaves = malloc(numLeaves * sizeof(Node));
+  Node** temp = malloc(currentLevelSize * sizeof(Node*));
+  for (int i = 0; i < numLeaves; i++) {
+    leaves[i].value = i;
+    leaves[i].leftChild = NULL;
+    leaves[i].rightChild = NULL;
+    temp[i] = &leaves[i];
+  }
+
+  // Build initial tournament tree
+  while (currentLevelSize > 1) {
+    int newSize = 0;
+    for (int i = 0; i < currentLevelSize - 1; i += 2) {
+      Node* parent = createNewNode(temp[i], temp[i + 1]);
+      if (compare(temp[i]->value, temp[i + 1]->value) > 0) {
+        parent->value = temp[i]->value;
+        parent->comparedTo = temp[i + 1]->value;
+      }
+      else {
+        parent->value = temp[i + 1]->value;
+        parent->comparedTo = temp[i]->value;
+      }
+      temp[newSize++] = temp[i]->parent = temp[i + 1]->parent = parent;
+    }
+
+    if (currentLevelSize % 2 == 1) {
+      temp[newSize] = temp[currentLevelSize - 1];
+      swap(&temp[0], &temp[newSize++]);
+    }
+    currentLevelSize = newSize;
+  }
+  *pathIndex = temp[0]->value;
+  *root = temp[0];
+  free(temp);
+  return leaves;
 }
 
 // Allocates and initializes a new Node struct
