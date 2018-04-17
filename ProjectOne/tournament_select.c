@@ -51,22 +51,22 @@ void tournamentSelect(int n, int k, int* out) {
     // Replace the winningIndex's value with -1, so that in the future
     // we don't waste comparisons. We already knew this was the max and
     // don't need to worry about it anymore.
-    leaves[winningIndex].value = -1;
+    Node* node = &leaves[winningIndex];
+    node->value = -1;
 
     // Follow the path of the max element up the tree.
-    Node node = leaves[winningIndex];
-    for (; node.parent != NULL; node = *node.parent) {
+    for (; node->parent != NULL; node = node->parent) {
       // Keep as the parent's value the maximum of the the current node's
       // value and the other child's value (comparedTo). 
       // Store the other into comparedTo.
-      node.parent->value = node.value;
-      if (compare(node.parent->value, node.parent->comparedTo) < 0) {
-        swap(&node.parent->value, &node.parent->comparedTo);
+      node->parent->value = node->value;
+      if (compare(node->parent->value, node->parent->comparedTo) < 0) {
+        swap(&node->parent->value, &node->parent->comparedTo);
       }
     }
     // Update the output and the winningIndex.
-    out[outIndex] = node.value;
-    winningIndex = node.value;
+    out[outIndex] = node->value;
+    winningIndex = node->value;
   }
 
   // Free the tree.
@@ -96,7 +96,6 @@ Node* buildTournamentTree(int numLeaves, Node** root) {
     int newLevelSize = 0;
     // For each pair of nodes in the current level, create and configure
     // a parent node.
-    int i;
     for (i = 0; i < currentLevelSize - 1; i += 2) {
       Node* parent = createNewNode(helperArray[i], helperArray[i + 1]);
       if (compare(helperArray[i]->value, helperArray[i + 1]->value) > 0) {
