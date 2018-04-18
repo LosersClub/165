@@ -56,9 +56,9 @@ void tournamentSelect(int n, int k, int* out) {
 
     // Follow the path of the max element up the tree.
     for (; node->parent != NULL; node = node->parent) {
-      // Keep as the parent's value the maximum of the the current node's
-      // value and the other child's value (comparedTo). 
-      // Store the other into comparedTo.
+      // Set the parent's value as the maximum of the current node's
+      // value and the other child's value (stored as comparedTo). 
+      // Store the lesser into comparedTo.
       node->parent->value = node->value;
       if (compare(node->parent->value, node->parent->comparedTo) < 0) {
         swap(&node->parent->value, &node->parent->comparedTo);
