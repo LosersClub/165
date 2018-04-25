@@ -21,8 +21,8 @@ typedef struct _Node {
 void populateArrays(int n, int* alls, int* majorities, int* allSize, int* majoritySize);
 void handleMajorities(int* refAll, int* majorities, int* majorityRemainders, int* majorityRemainderSize, int* majoritySize, int* majorityCount, int* indexOfOther);
 void handleMajorityRemainders(int* alls, int* allSize, int* majorityRemainders, const int* majoritySize);
-Node* buildNodes(int* alls, int allSize, int* allNodesSize);
-Node* handleAlls(int* alls, int allSize);
+Node* buildNodes(int* alls, int allSize, int* remainders, int remainderSize, int* allNodesSize);
+Node* handleAlls(int* alls, int allSize, int* remainders, int remainderSize);
 
 int execute(int n) {
   int* alls = malloc(sizeof(int)*n);
@@ -34,28 +34,35 @@ int execute(int n) {
  
   populateArrays(n, alls, majorities, &allSize, &majoritySize);
 
+  if (allSize == 0) {
+    printf("No all exists we need to make one!\n");
+    return -1;
+  }
   int refAll[4] = { alls[0], alls[1], alls[2], alls[3] };
   handleMajorities(refAll, majorities, majorityRemainders, &majorityRemainderSize, &majoritySize, &majorityCount, &indexOfOther);
-  handleMajorityRemainders(alls, &allSize, majorityRemainders, &majoritySize);
-  Node* finalAll = handleAlls(alls, allSize);
+
+ // handleMajorityRemainders(alls, &allSize, majorityRemainders, &majoritySize);
+  Node* finalAll = handleAlls(alls, allSize, majorityRemainders, majorityRemainderSize);
 
   int queryReturn;
   if (finalAll != NULL) {
     numSameAlls = finalAll->size;
-    int query[4] = { refAll[0], refAll[1], finalAll->indices[0], finalAll->indices[1] };
+    int query[4] = { refAll[2], refAll[3], finalAll->indices[0], finalAll->indices[1] };
     queryReturn = QCOUNT(1, query);
   } else {
     numSameAlls = 0;
     queryReturn = 4;
   }
 
-
+  //printf("majorityCount: %d\n", majorityCount);
   if (queryReturn == 4) {
     totalCount = (majorityCount * 2) + numSameAlls;
   }else {
     totalCount = (majorityCount * 2) - numSameAlls;
   }
-
+  //printf("query - %d, numAlls - %d, majCount - %d\n", queryReturn, numSameAlls, majorityCount);
+  //printf("TotalCount: %d\n", totalCount);
+  //printf("\n");
   if (totalCount > 0) {
     return refAll[0];
   } else if (totalCount < 0) {
@@ -65,21 +72,27 @@ int execute(int n) {
   }
 }
 
-Node* buildNodes(int* alls, int allSize, int* allNodesSize) {
-  Node* allNodes = malloc(sizeof(Node)*(allSize / 4));
+Node* buildNodes(int* alls, int allSize, int* remainders, int remainderSize, int* allNodesSize) {
+  Node* allNodes = malloc(sizeof(Node)*((allSize / 4) + (remainderSize / 2)));
   int i, nodeCounter;
   for (i = nodeCounter = 0; i < allSize; i+=4, nodeCounter++) {
     allNodes[nodeCounter].indices[0] = alls[i];
     allNodes[nodeCounter].indices[1] = alls[i + 1];
     allNodes[nodeCounter].size = 4;
   }
+  for (i = 0; i < remainderSize; i += 2, nodeCounter++) {
+    allNodes[nodeCounter].indices[0] = remainders[i];
+    allNodes[nodeCounter].indices[1] = remainders[i + 1];
+    allNodes[nodeCounter].size = 2;
+  }
   *allNodesSize = nodeCounter;
   return allNodes;
 }
 
-Node* handleAlls(int* alls, int allSize) {
+Node* handleAlls(int* alls, int allSize, int* remainders, int remainderSize) {
   int allNodesSize = 0;
-  Node* allNodes = buildNodes(alls, allSize, &allNodesSize);
+  Node* allNodes = buildNodes(alls, allSize, remainders, remainderSize, &allNodesSize);
+
   int i;
   while (allNodesSize > 1) {
     int newSize = 0;
@@ -103,7 +116,7 @@ Node* handleAlls(int* alls, int allSize) {
         allNodes[newSize++] = *toBringUp;
       }
     }
-    if (newSize % 2 == 1) {
+    if (allNodesSize % 2 == 1) {
       allNodes[newSize++] = allNodes[allNodesSize - 1];
     }
     allNodesSize = newSize;
@@ -119,7 +132,7 @@ void handleMajorityRemainders(int* alls, int* allSize, int* majorityRemainders, 
   int i, j, queryReturn;
   for (i = 0; i < *majoritySize; i+=4) {
     for (j = 0; j < 4; j++) {
-      query[j] = majoritySize[i + j];
+      query[j] = majorityRemainders[i + j];
     }
     queryReturn = QCOUNT(1, query);
     if (queryReturn == 4) {
@@ -135,8 +148,8 @@ void handleMajorities(int* refAll, int* majorities, int* majorityRemainders, int
   int query[4] = { refAll[0], refAll[1], refAll[2], refAll[3] };
   int i, queryReturn;
   for (i = 0; i < *majoritySize; i+=4) {
-    query[3] = majorities[i + 2];
-    query[4] = majorities[i + 3];
+    query[2] = majorities[i + 2];
+    query[3] = majorities[i + 3];
     queryReturn = QCOUNT(1, query);
     if (queryReturn == 4) {
       (*majorityCount) += 1;
