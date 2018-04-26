@@ -48,7 +48,7 @@ int execute(int n) {
   if (finalAll != NULL) {
     numSameAlls = finalAll->size;
     int query[4] = { refAll[2], refAll[3], finalAll->indices[0], finalAll->indices[1] };
-    queryReturn = QCOUNT(1, query);
+    queryReturn = QUERY(query);
   } else {
     numSameAlls = 0;
     queryReturn = 4;
@@ -98,7 +98,7 @@ Node* handleAlls(int* alls, int allSize, int* remainders, int remainderSize) {
     int newSize = 0;
     for (i = 0; i < allNodesSize - 1; i+=2) {
       int query[4] = { allNodes[i].indices[0], allNodes[i].indices[1], allNodes[i + 1].indices[0], allNodes[i + 1].indices[1] };
-      int queryReturn = QCOUNT(1, query);
+      int queryReturn = QUERY(query);
       Node* toBringUp = NULL;
       if (queryReturn == 0) {
         if (allNodes[i].size > allNodes[i + 1].size) {
@@ -134,7 +134,7 @@ void handleMajorityRemainders(int* alls, int* allSize, int* majorityRemainders, 
     for (j = 0; j < 4; j++) {
       query[j] = majorityRemainders[i + j];
     }
-    queryReturn = QCOUNT(1, query);
+    queryReturn = QUERY(query);
     if (queryReturn == 4) {
       for (j = 0; j < 4; j++) {
         alls[(*allSize)++] = query[j];
@@ -150,7 +150,7 @@ void handleMajorities(int* refAll, int* majorities, int* majorityRemainders, int
   for (i = 0; i < *majoritySize; i+=4) {
     query[2] = majorities[i + 2];
     query[3] = majorities[i + 3];
-    queryReturn = QCOUNT(1, query);
+    queryReturn = QUERY(query);
     if (queryReturn == 4) {
       (*majorityCount) += 1;
     } else if (queryReturn == 0) {
@@ -171,7 +171,7 @@ void populateArrays(int n, int* alls, int* majorities, int* allSize, int* majori
     for (j = 0; j < 4; j++) {
       query[j] = i + j + 1;
     }
-    queryReturn = QCOUNT(1, query);
+    queryReturn = QUERY(query);
     if (queryReturn == 4) {
       for (j = 0; j < 4; j++) {
         alls[(*allSize)++] = query[j];
