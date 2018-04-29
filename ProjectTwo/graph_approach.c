@@ -65,10 +65,27 @@ int main(int n) {
     buildChain(tempChain, tempNode, Unknown);
     addChain(&head, tempChain);
   }
+  // TODO: Handle case of odd number of nodes.
+
   //LOOP THROUGH ALL ADJACENT PAIRS OF CHAINS IN THE CHAINLIST, AND CALL
   // EVALRULE ON THEM. CONTINUE UNTIL THERE IS < 1 CHAIN IN THE CHAINLIST
 
-  // INSERT CODE HERE
+  while (head.size > 1) {
+    Chain* first  = head.first;
+    Chain* second = first->next;
+    while (first != head.last || second != NULL) {
+      evalRule(first, second, &head);
+      if (first->next != second) {
+        // If a chain was deleted we only need to go to the next
+        first = first->next;
+      } else {
+        // No chain was deleted?
+        first = second->next;
+      }
+      // Need to handle if both chains were deleted?
+      second = first->next;
+    }
+  }
 
   //Evaluating the results:
   if (head.size == 0) {
