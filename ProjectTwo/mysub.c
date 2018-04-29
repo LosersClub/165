@@ -1,10 +1,10 @@
 #define DEBUG
-#define NO_MAJORITY
+//#define NO_MAJORITY
 #define PRINT_DATA
-#define N_DEBUG 16
+#define N_DEBUG 2000
 
 #include "utils.c"
-#include "tree_approach.c"
+#include "graph_approach.c"
 
 int mysubFinal(int n) {
   return execute(n);

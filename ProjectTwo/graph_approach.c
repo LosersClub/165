@@ -1,12 +1,11 @@
 #include <stdlib.h>
-
 // need to typedef
 enum Type {All, Maj, Unknown};
 
 typedef struct _Node {
   int indices[2];
-  Node* next;
-  Node* prev;
+  struct _Node* next;
+  struct _Node* prev;
 } Node;
 
 typedef struct _Chain {
@@ -14,8 +13,8 @@ typedef struct _Chain {
   Node* first;
   Node* last;
   int size;
-  Chain* prev;
-  Chain* next;
+  struct _Chain* prev;
+  struct _Chain* next;
 } Chain;
 
 typedef struct _ChainList {
@@ -26,13 +25,13 @@ typedef struct _ChainList {
 
 Node* buildNode(int indexOne, int indexTwo);
 Node* removeNode(Chain* chain, Node* node);
-void deleteNode(Chain* chain, Node* node);
-Chain* buildChain(Chain* chain, Node* node, enum Type type);
+void deleteNode(Chain* chain, Node* node, ChainList* chainList);
+Chain* buildChain(Node* node, enum Type type);
 void deleteChain(Chain* chain, ChainList* chainList);
 void combineChains(Chain* left, Chain* right, ChainList* chainList);
-int dropEveryOtherBackward(Chain* chain, Node* node);
-int dropEveryOtherForward(Chain* chain, Node* node);
-void breakChain(Chain* chain, ChainList* chainList);
+int dropEveryOtherBackward(Chain* chain, Node* node, ChainList* chainList);
+int dropEveryOtherForward(Chain* chain, Node* node, ChainList* chainList);
+void breakUpChain(Chain* chain, ChainList* chainList);
 void addNode(Chain* chain, Node* node);
 int query(Node* nodeOne, Node* nodeTwo);
 void evalRule(Chain* left, Chain* right, ChainList* chainList);
@@ -47,22 +46,19 @@ void addChain(ChainList* head, Chain* chain);
 
 
 //NOTE: CHAINS CALLED TOGETHER MUST BE ADJACENT OR COMBINE CHAINS WILL BREAK
-int main(int n) {
+int execute(int n) {
   ChainList head;
   Node* tempNode;
   Chain* tempChain;
-  if (n < 1) {
-    printf("Size is danged!");
+  if (n < 5) {
+    printf("Too few elements to determine majority.");
     return -1;
-  }
-  else if (n == 1) {
-    return 1;
   }
   initHead(&head);
   int i;
   for (i = 0; i < n - 1; i+=2) {
     tempNode = buildNode(i + 1, i + 2);
-    buildChain(tempChain, tempNode, Unknown);
+    tempChain = buildChain(tempNode, Unknown);
     addChain(&head, tempChain);
   }
   // TODO: Handle case of odd number of nodes.
@@ -73,17 +69,17 @@ int main(int n) {
   while (head.size > 1) {
     Chain* first  = head.first;
     Chain* second = first->next;
-    while (first != head.last || second != NULL) {
+    Chain* next = second->next;
+    while (second != NULL) {
+      
       evalRule(first, second, &head);
-      if (first->next != second) {
-        // If a chain was deleted we only need to go to the next
-        first = first->next;
-      } else {
-        // No chain was deleted?
-        first = second->next;
-      }
-      // Need to handle if both chains were deleted?
-      second = first->next;
+
+      first = next;
+      second = first == NULL ? NULL : first->next;
+      next = second == NULL ? NULL : second->next;
+    }
+    if (head.size > 1 && head.last->type == Unknown) {
+      head.last->type = Maj;
     }
   }
 
@@ -117,8 +113,14 @@ void deleteChainList(ChainList* head) {
 }
 
 void addChain(ChainList* head, Chain* chain) {
-  head->last->next = chain;
-  head->size += chain->size;
+  if (head->size == 0) {
+    head->first = chain;
+  }
+  else {
+    head->last->next = chain;
+    chain->prev = head->last;
+  }
+  head->size += 1;
   head->last = chain;
 }
 
@@ -131,82 +133,77 @@ Node* buildNode(int indexOne, int indexTwo) {
   return node;
 }
 
-void deleteNode(Chain* chain, Node* node) {
+void deleteNode(Chain* chain, Node* node, ChainList* chainList) {
   if (node->next != NULL) {
     node->next->prev = node->prev;
-  }
-  //it's the last
-  else {
-    node->prev->next = NULL;
-    chain->last = node->prev;
   }
   if (node->prev != NULL) {
     node->prev->next = node->next;
   }
-  //it's the first
-  else {
-    node->next->prev = NULL;
+  if (chain->first == node) {
     chain->first = node->next;
+  }
+  if (chain->last == node) {
+    chain->last = node->prev;
   }
   chain->size -= 1;
   free(node);
+
+  if (chain->size == 0) {
+    deleteChain(chain, chainList);
+  }
 }
 
 Node* removeNode(Chain* chain, Node* node) {
   if (node->next != NULL) {
     node->next->prev = node->prev;
   }
-  //it's the last
-  else {
-    node->prev->next = NULL;
-    chain->last = node->prev;
-  }
   if (node->prev != NULL) {
     node->prev->next = node->next;
   }
-  //it's the first
-  else {
-    node->next->prev = NULL;
+  if (chain->first == node) {
     chain->first = node->next;
   }
+  if (chain->last == node) {
+    chain->last = node->prev;
+  }
+  chain->size -= 1;
   node->prev = NULL;
   node->next = NULL;
   chain->size -= 1;
   return node;
 }
 
-Chain* buildChain(Chain* chain, Node* node, enum Type type) {
-  Chain* out = malloc(sizeof(Chain));
+Chain* buildChain(Node* node, enum Type type) {
+  Chain* chain = malloc(sizeof(Chain));
   chain->first = node;
   chain->last = node;
   chain->size = 1;
   chain->type = type;
   chain->next = NULL;
   chain->prev = NULL;
-  return out;
+  return chain;
 }
 
 void deleteChain(Chain* chain, ChainList* chainList) {
   Node* node = chain->first;
+  Node* temp;
   while (node != NULL) {
-    node = node->next;
-    deteleNode(node->prev);
+    temp = node->next;
+    free(node);
+    node = temp;
   }
   if (chain->next != NULL) {
     chain->next->prev = chain->prev;
   }
-  //it's the last
-  else {
-    chain->prev->next = NULL;
-    chainList->last = chain->prev;
-  }
   if (chain->prev != NULL) {
     chain->prev->next = chain->next;
   }
-  //it's the first
-  else {
-    node->next->prev = NULL;
+  if (chainList->first == chain) {
     chainList->first = chain->next;
+  }
+  if (chainList->last == chain) {
+    chainList->last = chain->prev;
   }
   free(chain);
   chainList->size -= 1;
@@ -215,23 +212,25 @@ void deleteChain(Chain* chain, ChainList* chainList) {
 
 void combineChains(Chain* left, Chain* right, ChainList* chainList) {
   left->last->next = right->first;
+  right->first->prev = left->last;
   left->last = right->last;
   left->size += right->size;
+  right->first = NULL;
   deleteChain(right, chainList);
 }
 
 //inclusive
-int dropEveryOtherBackward(Chain* chain, Node* node) {
+int dropEveryOtherBackward(Chain* chain, Node* node, ChainList* chainList) {
   int numDropped = 0;
   Node* temp = node->prev;
   while (temp != NULL) {
-    removeNode(chain, temp->next);
+    deleteNode(chain, temp->next, chainList);
     numDropped++;
     if (temp->prev == NULL) {
       return numDropped;
     }
     if (temp->prev->prev == NULL) {
-      removeNode(chain, temp->prev);
+      deleteNode(chain, temp->prev, chainList);
       return ++numDropped;
     }
     temp = temp->prev->prev;
@@ -240,17 +239,17 @@ int dropEveryOtherBackward(Chain* chain, Node* node) {
 }
 
 //inclusive
-int dropEveryOtherForward(Chain* chain, Node* node) {
+int dropEveryOtherForward(Chain* chain, Node* node, ChainList* chainList) {
   int numDropped = 0;
   Node* temp = node->next;
   while (temp != NULL) {
-    removeNode(chain, temp->prev);
+    deleteNode(chain, temp->prev, chainList);
     numDropped++;
     if (temp->next == NULL) {
       return numDropped;
     }
     if (temp->next->next == NULL) {
-      removeNode(chain, temp->next);
+      deleteNode(chain, temp->next, chainList);
       return ++numDropped;
     }
     temp = temp->next->next;
@@ -258,12 +257,10 @@ int dropEveryOtherForward(Chain* chain, Node* node) {
   return numDropped;
 }
 
-void breakChain(Chain* chain, ChainList* chainList) {
+void breakUpChain(Chain* chain, ChainList* chainList) {
   Node* temp = chain->first;
   while (temp != NULL) {
-    Chain* newChain;
-    //NEED TO ADD TO FULL SET OF CHAINS
-    buildChain(newChain, temp, All);
+    Chain* newChain = buildChain(temp, All);
     addChain(newChain, chainList);
     temp = temp->next;
   }
@@ -272,10 +269,17 @@ void breakChain(Chain* chain, ChainList* chainList) {
 
 
 void addNode(Chain* chain, Node* node) {
-  node->prev = chain->last;
-  chain->last->next = node;
-  node->next = NULL;
+  if (chain->size == 0) {
+    chain->first = node;
+    node->prev = NULL;
+  }
+  else {
+    chain->last->next = node;
+    node->prev = chain->last;
+  }
   chain->size += 1;
+  chain->last = node;
+  node->next = NULL;
 }
 
 int query(Node* nodeOne, Node* nodeTwo) {
@@ -284,7 +288,7 @@ int query(Node* nodeOne, Node* nodeTwo) {
                nodeTwo->indices[0],
                nodeTwo->indices[1]
   };
-  return QCOUNT(q);
+  return QUERY(q);
 }
 
 void evalRule(Chain* left, Chain* right, ChainList* chainList) {
@@ -330,19 +334,19 @@ void unkUnkRule(Chain* unkLeft, Chain* unkRight, ChainList* chainList) {
 void majAllRule(Chain* maj, Chain* all, ChainList* chainList) {
   int queryReturn = query(maj->last, all->first);
   if (queryReturn == 2) {
-    dropEveryOtherBackward(maj, maj->last);
+    dropEveryOtherBackward(maj, maj->last, chainList);
     breakUpChain(maj, chainList);
   }
   else if (queryReturn == 4) {
-    dropEveryOtherBackward(maj, maj->last->prev);
+    dropEveryOtherBackward(maj, maj->last->prev, chainList);
     addNode(all, removeNode(maj, maj->last));
     breakUpChain(maj, chainList);
   }
   else if (queryReturn == 0) {
-    dropEveryOtherBackward(maj, maj->last->prev);
+    dropEveryOtherBackward(maj, maj->last->prev, chainList);
     //remove maj->last and all->first
-    removeNode(maj, maj->last);
-    removeNode(maj, all->first);
+    deleteNode(maj, maj->last, chainList);
+    deleteNode(all, all->first, chainList);
     breakUpChain(maj, chainList);
 
   }
@@ -354,19 +358,19 @@ void majAllRule(Chain* maj, Chain* all, ChainList* chainList) {
 void allMajRule(Chain* all, Chain* maj, ChainList* chainList) {
   int queryReturn = query(all->last, maj->first);
   if (queryReturn == 2) {
-    dropEveryOtherForward(maj, maj->first);
+    dropEveryOtherForward(maj, maj->first, chainList);
     breakUpChain(maj, chainList);
   }
   else if (queryReturn == 4) {
-    dropEveryOtherForward(maj, maj->first->next);
-    addNode(all, remvoeNode(maj, maj->first));
+    dropEveryOtherForward(maj, maj->first->next, chainList);
+    addNode(all, removeNode(maj, maj->first));
     breakUpChain(maj, chainList);
   }
   else if (queryReturn == 0) {
-    dropEveryOtherForward(maj, maj->first->prev);
+    dropEveryOtherForward(maj, maj->first->next, chainList);
     //remove all->last and maj->first
-    removeNode(all, all->last);
-    removeNode(maj, maj->first);
+    deleteNode(all, all->last, chainList);
+    deleteNode(maj, maj->first, chainList);
     breakUpChain(maj, chainList);
   }
   else {
@@ -380,11 +384,10 @@ void majMajRule(Chain* majLeft, Chain* majRight, ChainList* chainList) {
     combineChains(majLeft, majRight, chainList);
   }
   else if (queryReturn == 4) {
-    dropEveryOtherBackward(majLeft, majLeft->last->prev);
-    dropEveryOtherForward(majRight, majRight->first->next);
+    dropEveryOtherBackward(majLeft, majLeft->last->prev, chainList);
+    dropEveryOtherForward(majRight, majRight->first->next, chainList);
     // Make the majLeft->last and majRight->first into a single all chain
-    Chain* temp;
-    buildChain(temp, removeNode(majLeft, majLeft->last), All);
+    Chain* temp = buildChain(removeNode(majLeft, majLeft->last), All);
     addChain(temp, chainList);
     addNode(temp, removeNode(majRight, majRight->first));
     // Break up remaining majLeft and majRight chains
@@ -392,8 +395,8 @@ void majMajRule(Chain* majLeft, Chain* majRight, ChainList* chainList) {
     breakUpChain(majRight, chainList);
   }
   else if (queryReturn == 0) {
-    removeNode(majLeft, majLeft->last);
-    removeNode(majRight, majRight->first);
+    deleteNode(majLeft, majLeft->last, chainList);
+    deleteNode(majRight, majRight->first, chainList);
   }
   else {
     printf("majMajRule: unexpected error on query!");
@@ -412,14 +415,14 @@ void allAllRule(Chain* allLeft, Chain* allRight, ChainList* chainList) {
     if (allLeft->size < allRight->size) {
       int i;
       for (i = 0; i < allLeft->size; i++) {
-        removeNode(allRight, allRight->first);
+        deleteNode(allRight, allRight->first, chainList);
       }
       deleteChain(allLeft, chainList);
     }
     else if (allRight->size < allLeft->size) {
       int i;
       for (i = 0; i < allRight->size; i++) {
-        removeNode(allLeft, allLeft->first);
+        deleteNode(allLeft, allLeft->first, chainList);
       }
       deleteChain(allRight, chainList);
     }
