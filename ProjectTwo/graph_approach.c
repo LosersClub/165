@@ -24,7 +24,7 @@ typedef struct _ChainList {
 } ChainList;
 
 Node* buildNode(int indexOne, int indexTwo);
-Node* removeNode(Chain* chain, Node* node);
+Node* removeNode(Chain* chain, Node* node, ChainList* chainList);
 void deleteNode(Chain* chain, Node* node, ChainList* chainList);
 Chain* buildChain(Node* node, enum Type type);
 void deleteChain(Chain* chain, ChainList* chainList);
@@ -147,14 +147,14 @@ void deleteNode(Chain* chain, Node* node, ChainList* chainList) {
     chain->last = node->prev;
   }
   chain->size -= 1;
-  free(node);
+  //free(node);
 
   if (chain->size == 0) {
     deleteChain(chain, chainList);
   }
 }
 
-Node* removeNode(Chain* chain, Node* node) {
+Node* removeNode(Chain* chain, Node* node, ChainList* chainList) {
   if (node->next != NULL) {
     node->next->prev = node->prev;
   }
@@ -170,7 +170,9 @@ Node* removeNode(Chain* chain, Node* node) {
   chain->size -= 1;
   node->prev = NULL;
   node->next = NULL;
-  chain->size -= 1;
+  if (chain->size == 0) {
+    deleteChain(chain, chainList);
+  }
   return node;
 }
 
@@ -190,7 +192,7 @@ void deleteChain(Chain* chain, ChainList* chainList) {
   Node* temp;
   while (node != NULL) {
     temp = node->next;
-    free(node);
+    //free(node);
     node = temp;
   }
   if (chain->next != NULL) {
@@ -205,7 +207,7 @@ void deleteChain(Chain* chain, ChainList* chainList) {
   if (chainList->last == chain) {
     chainList->last = chain->prev;
   }
-  free(chain);
+  //free(chain);
   chainList->size -= 1;
 }
 
@@ -219,51 +221,86 @@ void combineChains(Chain* left, Chain* right, ChainList* chainList) {
   deleteChain(right, chainList);
 }
 
-//inclusive
+////inclusive
+//int dropEveryOtherBackward(Chain* chain, Node* node, ChainList* chainList) {
+//  int numDropped = 0;
+//  if (node == NULL) {
+//    return 0;
+//  }
+//  Node* temp = node->prev;
+//  while (temp != NULL) {
+//    deleteNode(chain, temp->next, chainList);
+//    numDropped++;
+//    if (temp->prev == NULL) {
+//      return numDropped;
+//    }
+//    if (temp->prev->prev == NULL) {
+//      deleteNode(chain, temp->prev, chainList);
+//      return ++numDropped;
+//    }
+//    temp = temp->prev->prev;
+//  }
+//  return numDropped;
+//}
+
 int dropEveryOtherBackward(Chain* chain, Node* node, ChainList* chainList) {
   int numDropped = 0;
-  Node* temp = node->prev;
-  while (temp != NULL) {
-    deleteNode(chain, temp->next, chainList);
+  while (node != NULL) {
+    Node* temp = node->prev;
+    if (temp != NULL) {
+      temp = temp->prev;
+    }
+    deleteNode(chain, node, chainList);
     numDropped++;
-    if (temp->prev == NULL) {
-      return numDropped;
+    node = temp;
+  }
+  return numDropped;
+}
+
+int dropEveryOtherForward(Chain* chain, Node* node, ChainList* chainList) {
+  int numDropped = 0;
+  while (node != NULL) {
+    Node* temp = node->next;
+    if (temp != NULL) {
+      temp = temp->next;
     }
-    if (temp->prev->prev == NULL) {
-      deleteNode(chain, temp->prev, chainList);
-      return ++numDropped;
-    }
-    temp = temp->prev->prev;
+    deleteNode(chain, node, chainList);
+    numDropped++;
+    node = temp;
   }
   return numDropped;
 }
 
 //inclusive
-int dropEveryOtherForward(Chain* chain, Node* node, ChainList* chainList) {
-  int numDropped = 0;
-  Node* temp = node->next;
-  while (temp != NULL) {
-    deleteNode(chain, temp->prev, chainList);
-    numDropped++;
-    if (temp->next == NULL) {
-      return numDropped;
-    }
-    if (temp->next->next == NULL) {
-      deleteNode(chain, temp->next, chainList);
-      return ++numDropped;
-    }
-    temp = temp->next->next;
-  }
-  return numDropped;
-}
+//int dropEveryOtherForward(Chain* chain, Node* node, ChainList* chainList) {
+//  int numDropped = 0;
+//  if (node == NULL) {
+//    return 0;
+//  }
+//  Node* temp = node->next;
+//  while (temp != NULL) {
+//    deleteNode(chain, temp->prev, chainList);
+//    numDropped++;
+//    if (temp->next == NULL) {
+//      return numDropped;
+//    }
+//    if (temp->next->next == NULL) {
+//      deleteNode(chain, temp->next, chainList);
+//      return ++numDropped;
+//    }
+//    temp = temp->next->next;
+//  }
+//  return numDropped;
+//}
 
 void breakUpChain(Chain* chain, ChainList* chainList) {
   Node* temp = chain->first;
   while (temp != NULL) {
     Chain* newChain = buildChain(temp, All);
-    addChain(newChain, chainList);
+    addChain(chainList,  newChain);
     temp = temp->next;
   }
+  chain->first = NULL;
   deleteChain(chain, chainList);
 }
 
@@ -292,6 +329,7 @@ int query(Node* nodeOne, Node* nodeTwo) {
 }
 
 void evalRule(Chain* left, Chain* right, ChainList* chainList) {
+
   if (left->type == Maj && right->type == All) {
     majAllRule(left, right, chainList);
   }
@@ -334,21 +372,29 @@ void unkUnkRule(Chain* unkLeft, Chain* unkRight, ChainList* chainList) {
 void majAllRule(Chain* maj, Chain* all, ChainList* chainList) {
   int queryReturn = query(maj->last, all->first);
   if (queryReturn == 2) {
+    int majSize = maj->size;
     dropEveryOtherBackward(maj, maj->last, chainList);
-    breakUpChain(maj, chainList);
+    if (majSize > 1) {
+      breakUpChain(maj, chainList);
+    }
   }
   else if (queryReturn == 4) {
     dropEveryOtherBackward(maj, maj->last->prev, chainList);
-    addNode(all, removeNode(maj, maj->last));
-    breakUpChain(maj, chainList);
+    int majSize = maj->size;
+    addNode(all, removeNode(maj, maj->last, chainList));
+    if (majSize > 1) {
+      breakUpChain(maj, chainList);
+    }
   }
   else if (queryReturn == 0) {
     dropEveryOtherBackward(maj, maj->last->prev, chainList);
     //remove maj->last and all->first
+    int majSize = maj->size;
     deleteNode(maj, maj->last, chainList);
     deleteNode(all, all->first, chainList);
-    breakUpChain(maj, chainList);
-
+    if (majSize > 1) {
+      breakUpChain(maj, chainList);
+    }
   }
   else {
     printf("majAllRule: unexpected error on query!");
@@ -358,20 +404,29 @@ void majAllRule(Chain* maj, Chain* all, ChainList* chainList) {
 void allMajRule(Chain* all, Chain* maj, ChainList* chainList) {
   int queryReturn = query(all->last, maj->first);
   if (queryReturn == 2) {
+    int majSize = maj->size;
     dropEveryOtherForward(maj, maj->first, chainList);
-    breakUpChain(maj, chainList);
+    if (majSize > 1) {
+      breakUpChain(maj, chainList);
+    }
   }
   else if (queryReturn == 4) {
     dropEveryOtherForward(maj, maj->first->next, chainList);
-    addNode(all, removeNode(maj, maj->first));
-    breakUpChain(maj, chainList);
+    int majSize = maj->size;
+    addNode(all, removeNode(maj, maj->first, chainList));
+    if (majSize > 1) {
+      breakUpChain(maj, chainList);
+    }
   }
   else if (queryReturn == 0) {
     dropEveryOtherForward(maj, maj->first->next, chainList);
     //remove all->last and maj->first
     deleteNode(all, all->last, chainList);
+    int majSize = maj->size;
     deleteNode(maj, maj->first, chainList);
-    breakUpChain(maj, chainList);
+    if (majSize > 1) {
+      breakUpChain(maj, chainList);
+    }
   }
   else {
     printf("allMajRule: unexpected error on query!");
@@ -387,12 +442,18 @@ void majMajRule(Chain* majLeft, Chain* majRight, ChainList* chainList) {
     dropEveryOtherBackward(majLeft, majLeft->last->prev, chainList);
     dropEveryOtherForward(majRight, majRight->first->next, chainList);
     // Make the majLeft->last and majRight->first into a single all chain
-    Chain* temp = buildChain(removeNode(majLeft, majLeft->last), All);
-    addChain(temp, chainList);
-    addNode(temp, removeNode(majRight, majRight->first));
+    int leftSize = majLeft->size;
+    int rightSize = majRight->size;
+    Chain* temp = buildChain(removeNode(majLeft, majLeft->last, chainList), All);
+    addChain(chainList, temp);
+    addNode(temp, removeNode(majRight, majRight->first, chainList));
     // Break up remaining majLeft and majRight chains
-    breakUpChain(majLeft, chainList);
-    breakUpChain(majRight, chainList);
+    if (leftSize > 1) {
+      breakUpChain(majLeft, chainList);
+    }
+    if (rightSize > 1) {
+      breakUpChain(majRight, chainList);
+    }
   }
   else if (queryReturn == 0) {
     deleteNode(majLeft, majLeft->last, chainList);
