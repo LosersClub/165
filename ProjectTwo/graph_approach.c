@@ -45,6 +45,8 @@ void initHead(ChainList* head);
 void deleteChainList(ChainList* head);
 void addChain(ChainList* head, Chain* chain);
 void moveChain(Chain* chain, ChainList* chainList);
+void sortDecreasing(Chain* start, Chain* end, ChainList* chainList);
+void sortIncreasing(Chain* start, Chain* end, ChainList* chainList);
 
 
 //NOTE: CHAINS CALLED TOGETHER MUST BE ADJACENT OR COMBINE CHAINS WILL BREAK
@@ -168,6 +170,7 @@ int execute(int n) {
   //head.separator->first = NULL;
   //while (head.separator != head.first) {
   //  Chain* majRef = head.first->next;
+  //  Chain* allRef = head.separator->next;
   //  Chain* first = head.first;
   //  Chain* second = NULL;
 
@@ -189,17 +192,58 @@ int execute(int n) {
   //}
   //deleteChain(&separator, &head);
 
-  while (head.first != NULL && head.first->next != NULL && head.first->next->type != All) {
-    Chain* first = head.first;
-    Chain* second = first->next;
-    Chain* next = second->next;
-    while (second != NULL && second->type != All) {
-      evalRule(first, second, &head);
-      first = next;
-      second = first == NULL ? NULL : first->next;
-      next = second == NULL ? NULL : second->next;
+  //while (head.first != NULL && head.first->next != NULL && head.first->next->type != All) {
+  //  Chain* first = head.first;
+  //  Chain* second = first->next;
+  //  Chain* next = second->next;
+  //  while (second != NULL && second->type != All) {
+  //    evalRule(first, second, &head);
+  //    first = next;
+  //    second = first == NULL ? NULL : first->next;
+  //    next = second == NULL ? NULL : second->next;
+  //  }
+  //}
+
+  Chain separator;
+  addChain(&head, &separator);
+  head.separator = &separator;
+  head.separator->next = NULL;
+  head.separator->first = NULL;
+  while (head.separator->prev != NULL) {
+    if (head.separator->prev->prev == NULL) {
+      // Force majAll.
+      if (head.separator->next == NULL) {
+        break;
+      }
+      evalRule(head.first, head.separator->next, &head);
+      break;
     }
+    if (head.first == head.separator) {
+      break;
+    }
+    Chain* left = head.first;
+    Chain* right = NULL;
+    Chain* ref = left->next;
+    while ( ref != head.separator) {
+      Chain* all = head.separator->next;
+      if (left->size == 2 && all != NULL) {
+        right = all;
+      } else {
+        right = ref;
+        ref = ref->next;
+      }
+      evalRule(left, right, &head);
+      left = ref;
+      if (ref != head.separator) {
+        ref = ref->next;
+      }
+      sortIncreasing(head.separator->next, head.last, &head);
+    }
+    //if (head.first != head.separator) {
+    //  sortDecreasing(head.first, head.separator->prev, &head);
+    //}
   }
+  deleteChain(&separator, &head);
 
   while (head.size > 1) {
     Chain* first = head.first;
@@ -213,6 +257,17 @@ int execute(int n) {
       second = first == NULL ? NULL : first->next;
       next = second == NULL ? NULL : second->next;
     }
+    //first = head.first;
+    //while (first != NULL && first->type != All) {
+    //  first = first->next;
+    //}
+    //if (head.size > 1) {
+    //  if (first != NULL && first->prev == NULL) {
+    //    continue;
+    //  }
+    //  sortDecreasing(head.first, first == NULL ? head.last : first->prev, &head);
+    //  sortIncreasing(first == NULL ? head.first : first, head.last, &head);
+    //}
   }
 
   if (head.size == 1 && head.first->type == Maj) {
@@ -267,6 +322,86 @@ Node* buildNode(int indexOne, int indexTwo) {
   node->next = NULL;
   node->prev = NULL;
   return node;
+}
+
+// Inclusive
+void sortDecreasing(Chain* start, Chain* end, ChainList* chainList) {
+  if (start == NULL || end == NULL || start->next == end) {
+    return;
+  }
+
+  Chain* ref = start->next;
+  while (ref != end->next) {
+    Chain* temp = ref;
+    ref = ref->next;
+    while (temp != start && temp->size > temp->prev->size) {
+      if (temp->prev == start) {
+        start = temp;
+      }
+      if (temp == end) {
+        end = temp->prev;
+      }
+      Chain* left = temp->prev;
+      Chain* right = temp;
+      Chain* rightNext = right->next;
+      if (left->prev != NULL) {
+        left->prev->next = right;
+      }
+      if (right->next != NULL) {
+        right->next->prev = left;
+      }
+      right->next = left;
+      right->prev = left->prev;
+      left->next = rightNext;
+      left->prev = right;
+      if (chainList->first == left) {
+        chainList->first = right;
+      }
+      if (chainList->last == right) {
+        chainList->last = left;
+      }
+    }
+  }
+}
+
+// Inclusive
+void sortIncreasing(Chain* start, Chain* end, ChainList* chainList) {
+  if (start == NULL || end == NULL || start->next == end) {
+    return;
+  }
+
+  Chain* ref = start->next;
+  while (ref != end->next) {
+    Chain* temp = ref;
+    ref = ref->next;
+    while (temp != start && temp->size < temp->prev->size) {
+      if (temp->prev == start) {
+        start = temp;
+      }
+      if (temp == end) {
+        end = temp->prev;
+      }
+      Chain* left = temp->prev;
+      Chain* right = temp;
+      Chain* rightNext = right->next;
+      if (left->prev != NULL) {
+        left->prev->next = right;
+      }
+      if (right->next != NULL) {
+        right->next->prev = left;
+      }
+      right->next = left;
+      right->prev = left->prev;
+      left->next = rightNext;
+      left->prev = right;
+      if (chainList->first == left) {
+        chainList->first = right;
+      }
+      if (chainList->last == right) {
+        chainList->last = left;
+      }
+    }
+  }
 }
 
 void deleteNode(Chain* chain, Node* node, ChainList* chainList) {
