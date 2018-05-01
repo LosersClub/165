@@ -14,7 +14,7 @@ int mysub(int n) {
 #ifdef DEBUG
   int oneCount = 0;
 #ifndef NO_MAJORITY
-  for (int i = 0; i <= N_DEBUG; i++) {
+  for (int i = 1; i <= N_DEBUG; i++) {
     debug[i] = dshrandom(0) < 0.5 ? 0 : 1;
     oneCount += debug[i];
   }

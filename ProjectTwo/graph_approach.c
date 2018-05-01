@@ -537,6 +537,30 @@ void majMajRule(Chain* majLeft, Chain* majRight, ChainList* chainList) {
   int queryReturn = query(majLeft->last, majRight->first);
   if (queryReturn == 2) {
     combineChains(majLeft, majRight, chainList);
+
+    // Implicit edge handling (majLeft = maj chain)
+    if (majLeft->size == 2) {
+      // merged chain is size 2
+      return;
+    }
+    // First implicit edge. majLeft->size >= 3
+    // If All, discard everyOther from first->next, build all chain.
+    if (query(majLeft->first, majLeft->first->next->next) == 4) {
+      dropEveryOtherForward(majLeft, majLeft->first->next, chainList);
+      majLeft->type = All;
+      return;
+    }
+    // Otherwise drop the two compared nodes.
+    deleteNode(majLeft, majLeft->first, chainList);
+    deleteNode(majLeft, majLeft->first->next->next, chainList);
+    // Compare the other two. If one leave as majority
+    if (majLeft->size == 2) {
+      if (query(majLeft->first, majLeft->last) == 4) {
+        majLeft->type = All;
+      } else {
+        deleteChain(majLeft, chainList);
+      }
+    }
   }
   else if (queryReturn == 4) {
     dropEveryOtherBackward(majLeft, majLeft->last->prev, chainList);
