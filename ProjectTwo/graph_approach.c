@@ -20,6 +20,7 @@ typedef struct _Chain {
 typedef struct _ChainList {
   Chain* first;
   Chain* last;
+  Chain* separator;
   int size;
 } ChainList;
 
@@ -43,6 +44,7 @@ void allAllRule(Chain* majLeft, Chain* majRight, ChainList* chainList);
 void initHead(ChainList* head);
 void deleteChainList(ChainList* head);
 void addChain(ChainList* head, Chain* chain);
+void moveChain(Chain* chain, ChainList* chainList);
 
 
 //NOTE: CHAINS CALLED TOGETHER MUST BE ADJACENT OR COMBINE CHAINS WILL BREAK
@@ -61,16 +63,17 @@ int execute(int n) {
     tempChain = buildChain(tempNode, Unknown);
     addChain(&head, tempChain);
   }
+
   // TODO: Handle case of odd number of nodes.
 
   //LOOP THROUGH ALL ADJACENT PAIRS OF CHAINS IN THE CHAINLIST, AND CALL
   // EVALRULE ON THEM. CONTINUE UNTIL THERE IS < 1 CHAIN IN THE CHAINLIST
 
-  //Chain* temp = head.first;
-  //while (temp != NULL) {
-  //  temp->type = Maj;
-  //  temp = temp->next;
-  //}
+  Chain* temp = head.first;
+  while (temp != NULL) {
+    temp->type = Maj;
+    temp = temp->next;
+  }
 
   //while (head.size > 1) {
   //  Chain* left = head.first;
@@ -158,20 +161,57 @@ int execute(int n) {
   //  }
   //}
 
+  //Chain separator;
+  //addChain(&head, &separator);
+  //head.separator = &separator;
+  //head.separator->next = NULL;
+  //head.separator->first = NULL;
+  //while (head.separator != head.first) {
+  //  Chain* majRef = head.first->next;
+  //  Chain* first = head.first;
+  //  Chain* second = NULL;
+
+  //  while (first != head.separator) {
+  //    if (allRef != NULL) {
+  //      second = allRef;
+  //      allRef = allRef->next;
+  //    } else {
+  //      second = majRef;
+  //      majRef = majRef->next;
+  //    }
+  //    evalRule(first, second, &head);
+  //    if (allRef == NULL) {
+  //      allRef = head.separator->next;
+  //    }
+  //    first = majRef;
+  //    majRef = majRef->next;
+  //  }
+  //}
+  //deleteChain(&separator, &head);
+
+  while (head.first != NULL && head.first->next != NULL && head.first->next->type != All) {
+    Chain* first = head.first;
+    Chain* second = first->next;
+    Chain* next = second->next;
+    while (second != NULL && second->type != All) {
+      evalRule(first, second, &head);
+      first = next;
+      second = first == NULL ? NULL : first->next;
+      next = second == NULL ? NULL : second->next;
+    }
+  }
+
   while (head.size > 1) {
-    Chain* first  = head.first;
+    Chain* first = head.first;
     Chain* second = first->next;
     Chain* next = second->next;
     while (second != NULL) {
-      
+
       evalRule(first, second, &head);
 
       first = next;
       second = first == NULL ? NULL : first->next;
       next = second == NULL ? NULL : second->next;
-    }
-    if (head.size > 1 && head.last->type == Unknown) {
-      head.last->type = Maj;
     }
   }
 
@@ -281,6 +321,25 @@ Chain* buildChain(Node* node, enum Type type) {
   chain->next = NULL;
   chain->prev = NULL;
   return chain;
+}
+
+void moveChain(Chain* chain, ChainList* chainList) {
+  if (chain->next != NULL) {
+    chain->next->prev = chain->prev;
+  }
+  if (chain->prev != NULL) {
+    chain->prev->next = chain->next;
+  }
+  if (chainList->first == chain) {
+    chainList->first = chain->next;
+  }
+  if (chainList->last == chain) {
+    chainList->last = chain->prev;
+  }
+  //free(chain);
+  chainList->size -= 1;
+  chain->prev = chain->next = NULL;
+  addChain(chainList, chain);
 }
 
 void deleteChain(Chain* chain, ChainList* chainList) {
@@ -438,9 +497,6 @@ void evalRule(Chain* left, Chain* right, ChainList* chainList) {
   else if (left->type == All && right->type == All) {
     allAllRule(left, right, chainList);
   }
-  else if (left->type == Unknown && right->type == Unknown) {
-    unkUnkRule(left, right, chainList);
-  }
   else {
     printf("This was an unexpected combination!");
   }
@@ -476,6 +532,7 @@ void majAllRule(Chain* maj, Chain* all, ChainList* chainList) {
     dropEveryOtherBackward(maj, maj->last, chainList);
     if (majSize > 1) {
       breakUpChain(maj, chainList);
+      //allAllRule(all, maj, chainList);
     }
   }
   else if (queryReturn == 4) {
@@ -508,6 +565,7 @@ void allMajRule(Chain* all, Chain* maj, ChainList* chainList) {
     dropEveryOtherForward(maj, maj->first, chainList);
     if (majSize > 1) {
       breakUpChain(maj, chainList);
+      //allAllRule(all, maj, chainList);
     }
   }
   else if (queryReturn == 4) {
@@ -548,15 +606,17 @@ void majMajRule(Chain* majLeft, Chain* majRight, ChainList* chainList) {
     if (query(majLeft->first, majLeft->first->next->next) == 4) {
       dropEveryOtherForward(majLeft, majLeft->first->next, chainList);
       majLeft->type = All;
+      moveChain(majLeft, chainList);
       return;
     }
     // Otherwise drop the two compared nodes.
     deleteNode(majLeft, majLeft->first, chainList);
-    deleteNode(majLeft, majLeft->first->next->next, chainList);
+    deleteNode(majLeft, majLeft->first->next, chainList);
     // Compare the other two. If one leave as majority
     if (majLeft->size == 2) {
       if (query(majLeft->first, majLeft->last) == 4) {
         majLeft->type = All;
+        moveChain(majLeft, chainList);
       } else {
         deleteChain(majLeft, chainList);
       }
@@ -580,8 +640,21 @@ void majMajRule(Chain* majLeft, Chain* majRight, ChainList* chainList) {
     }
   }
   else if (queryReturn == 0) {
+    int originalLeftSize = majLeft->size;
+    int originalRightSize = majRight->size;
     deleteNode(majLeft, majLeft->last, chainList);
     deleteNode(majRight, majRight->first, chainList);
+    if (originalLeftSize == 1 || originalRightSize == 1) {
+      return;
+    }
+    if (query(majLeft->first, majRight->first) == 4) {
+      combineChains(majLeft, majRight, chainList);
+      majLeft->type = All;
+      moveChain(majLeft, chainList);
+    } else {
+      deleteChain(majLeft, chainList);
+      deleteChain(majRight, chainList);
+    }
   }
   else {
     printf("majMajRule: unexpected error on query!");

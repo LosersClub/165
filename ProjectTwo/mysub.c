@@ -45,7 +45,11 @@ int mysub(int n) {
     }
   }
   else {
-    printf("Guessed %d but was %d\n", debug[predict], answer);
+    if (predict == 0) {
+      printf("Guessed %d but was %d\n", -1, answer);
+    } else {
+      printf("Guessed %d but was %d\n", debug[predict], answer);
+    }
   }
   return -1;
 #endif
