@@ -66,6 +66,98 @@ int execute(int n) {
   //LOOP THROUGH ALL ADJACENT PAIRS OF CHAINS IN THE CHAINLIST, AND CALL
   // EVALRULE ON THEM. CONTINUE UNTIL THERE IS < 1 CHAIN IN THE CHAINLIST
 
+  //Chain* temp = head.first;
+  //while (temp != NULL) {
+  //  temp->type = Maj;
+  //  temp = temp->next;
+  //}
+
+  //while (head.size > 1) {
+  //  Chain* left = head.first;
+  //  Chain* right = NULL;
+  //  Chain* ref = head.first->next;
+  //  while (right == NULL) {
+  //    if (ref == NULL) {
+  //      // Could not find desired case
+  //      right = left->next;
+  //      continue;
+  //    }
+  //    if (left->type != Maj || ref->type == All) {
+  //      right = ref;
+  //    }
+  //    ref = ref->next;
+  //  }
+  //  evalRule(left, right, &head);
+  //}
+
+  //while (head.size > 1) {
+  //  Chain refLastChain;
+  //  refLastChain.first = NULL;
+  //  refLastChain.prev = NULL;
+  //  refLastChain.next = NULL;
+  //  addChain(&head, &refLastChain);
+  //  Chain* left = head.first;
+  //  Chain* right = NULL;
+  //  Chain* ref = head.first->next;
+  //  while (ref != &refLastChain) {
+  //    if (left->type != Maj) {
+  //      right = ref;
+  //    }
+
+  //    Chain* temp = ref;
+  //    while (temp != &refLastChain && right == NULL) {
+  //      if (temp->type == All) {
+  //        right = temp;
+  //      }
+  //      temp = temp->next;
+  //    }
+  //    if (right == NULL) {
+  //      right = ref;
+  //    }
+  //    ref = ref->next;
+  //    if (left == &refLastChain || right == &refLastChain) {
+  //      printf("Fuck this\n");
+  //    }
+  //    evalRule(left, right, &head);
+  //    right = NULL;
+  //    left = ref;
+  //    if (ref != &refLastChain) {
+  //      ref = ref->next;
+  //    }
+  //  }
+  //  deleteChain(&refLastChain, &head);
+  //  //if (head.size > 1 && head.last->type == Unknown) {
+  //  //  head.last->type = Maj;
+  //  //}
+  //}
+
+  //while (head.size > 1) {
+  //  Chain* left = head.first;
+  //  Chain* right = NULL;
+  //  Chain* ref = head.first->next;
+  //  while (ref != NULL) {
+  //    if (right != NULL) {
+  //      evalRule(left, right, &head);
+  //      left = ref;
+  //      right = NULL;
+  //      ref = ref->next;
+  //      continue;
+  //    }
+
+  //    if (left->type != Maj || ref->type == All) {
+  //      right = ref;
+  //    }
+  //    ref = ref->next;
+  //  }
+  //  if (left != NULL && head.last != left) {
+  //    // must do Maj vs Maj
+  //    evalRule(left, left->next, &head);
+  //  }
+  //  if (head.size > 1 && head.last->type == Unknown) {
+  //    head.last->type = Maj;
+  //  }
+  //}
+
   while (head.size > 1) {
     Chain* first  = head.first;
     Chain* second = first->next;
@@ -81,6 +173,10 @@ int execute(int n) {
     if (head.size > 1 && head.last->type == Unknown) {
       head.last->type = Maj;
     }
+  }
+
+  if (head.size == 1 && head.first->type == Maj) {
+    printf("Majority at Top\n");
   }
 
   //Evaluating the results:
@@ -357,8 +453,12 @@ void unkUnkRule(Chain* unkLeft, Chain* unkRight, ChainList* chainList) {
     unkLeft->type = Maj;
   }
   else if (queryReturn == 4) {
-    combineChains(unkLeft, unkRight, chainList);
-    unkLeft->type = All;
+    Chain* temp = buildChain(removeNode(unkLeft, unkLeft->last, chainList), All);
+    addChain(chainList, temp);
+    addNode(temp, removeNode(unkRight, unkRight->first, chainList));
+
+    //combineChains(unkLeft, unkRight, chainList);
+    //unkLeft->type = All;
   }
   else if (queryReturn == 0) {
     deleteChain(unkLeft, chainList);
