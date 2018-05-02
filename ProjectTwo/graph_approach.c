@@ -36,7 +36,7 @@ void breakUpChain(Chain* chain, ChainList* chainList);
 void addNode(Chain* chain, Node* node);
 int query(Node* nodeOne, Node* nodeTwo);
 void evalRule(Chain* left, Chain* right, ChainList* chainList);
-void unkUnkRule(Chain* majLeft, Chain* majRight, ChainList* chainList);
+void unkUnkRule(Chain* unkLeft, Chain* unkRight, Chain* stackA, Chain* stackB, ChainList* chainList);
 void majAllRule(Chain* majLeft, Chain* majRight, ChainList* chainList);
 void allMajRule(Chain* majLeft, Chain* majRight, ChainList* chainList);
 void majMajRule(Chain* majLeft, Chain* majRight, ChainList* chainList);
@@ -47,9 +47,128 @@ void addChain(ChainList* head, Chain* chain);
 void moveChain(Chain* chain, ChainList* chainList);
 void sortDecreasing(Chain* start, Chain* end, ChainList* chainList);
 void sortIncreasing(Chain* start, Chain* end, ChainList* chainList);
+void stackRule(Chain* maj, Chain* stackA, Chain* stackB, ChainList* chainList);
 
 
 //NOTE: CHAINS CALLED TOGETHER MUST BE ADJACENT OR COMBINE CHAINS WILL BREAK
+int execute2(int n) {
+  ChainList head;
+  Node* tempNode;
+  Chain* tempChain;
+  if (n < 5) {
+    printf("Too few elements to determine majority.");
+    return -1;
+  }
+  initHead(&head);
+  int i;
+  for (i = 0; i < n - 1; i += 2) {
+    tempNode = buildNode(i + 1, i + 2);
+    tempChain = buildChain(tempNode, Unknown);
+    addChain(&head, tempChain);
+  }
+
+  Chain* temp = head.first;
+  while (temp != NULL) {
+    temp->type = Maj;
+    temp = temp->next;
+  }
+
+  Chain separator;
+  addChain(&head, &separator);
+  head.separator = &separator;
+  head.separator->next = NULL;
+  head.separator->first = NULL;
+
+  Chain* stackA = NULL;
+  Chain* stackB = NULL;
+  while (head.separator->prev != NULL) {
+    if (head.separator->prev->prev == NULL) {
+      // Force majAll.
+      if (head.separator->next == NULL) {
+        break;
+      }
+      evalRule(head.first, head.separator->next, &head);
+      break;
+    }
+    if (head.first == head.separator) {
+      break;
+    }
+    Chain* left = head.first;
+    Chain* right = NULL;
+    Chain* ref = left->next;
+    while (ref != head.separator) {
+      if (stackA == NULL || left->size == 1) {
+        right = ref;
+        ref = ref->next;
+        unkUnkRule(left, right, stackA, stackB, &head);
+      } else {
+        stackRule(left, stackA, stackB, &head);
+      }
+      left = ref;
+      if (ref != head.separator) {
+        ref = ref->next;
+      }
+      if (stackA == NULL && head.separator->next != NULL) {
+        stackA = head.separator->next;
+      }
+      if (stackA != NULL && stackB == NULL && stackA->next != NULL) {
+        stackB = stackA->next;
+        if (query(stackA->first, stackB->first) != 0) {
+          printf("I found a fucking problem\n");
+        }
+      }
+
+      int majSize = 0;
+      Chain* temp = head.first;
+      while (temp != head.separator) {
+        majSize += 1;
+        temp = temp->next;
+      }
+      int size = majSize;
+      if (stackA != NULL) {
+        size += stackA->size;
+      }
+      if (stackB != NULL) {
+        size += stackB->size;
+      }
+      if (stackA != NULL && stackA->size > ceil(size / 2)) {
+        return stackA->first->indices[0];
+      }
+      if (stackB != NULL && stackB->size > ceil(size / 2)) {
+        return stackB->first->indices[0];
+      }
+    }
+  }
+  deleteChain(&separator, &head);
+
+  if (stackA == NULL && stackB == NULL) {
+    return 0;
+  }
+
+  if (stackA->size > stackB->size) {
+    return stackA->first->indices[0];
+  }
+  else if (stackB->size > stackA->size) {
+    return stackB->first->indices[0];
+  } else {
+    return 0;
+  }
+
+  //Evaluating the results:
+  if (head.size == 0) {
+    //even split, except there was 1 element left out from the start
+    if (n % 2 == 1) {
+      return n;
+    }
+    //even split
+    return 0;
+  }
+  //else, there was one remaining chain
+  return head.first->first->indices[0];
+  deleteChainList(&head);
+}
+
+
 int execute(int n) {
   ChainList head;
   Node* tempNode;
@@ -648,19 +767,29 @@ void evalRule(Chain* left, Chain* right, ChainList* chainList) {
   }
 }
 
-void unkUnkRule(Chain* unkLeft, Chain* unkRight, ChainList* chainList) {
+void unkUnkRule(Chain* unkLeft, Chain* unkRight, Chain* stackA, Chain* stackB, ChainList* chainList) {
   int queryReturn = query(unkLeft->first, unkRight->first);
   if (queryReturn == 2) {
     combineChains(unkLeft, unkRight, chainList);
     unkLeft->type = Maj;
   }
   else if (queryReturn == 4) {
-    Chain* temp = buildChain(removeNode(unkLeft, unkLeft->last, chainList), All);
-    addChain(chainList, temp);
-    addNode(temp, removeNode(unkRight, unkRight->first, chainList));
-
-    //combineChains(unkLeft, unkRight, chainList);
-    //unkLeft->type = All;
+    combineChains(unkLeft, unkRight, chainList);
+    unkLeft->type = All;
+    if (stackA != NULL) {
+      if (query(unkLeft->first, stackA->first) == 4) {
+        combineChains(stackA, unkLeft, chainList);
+      } else {
+        if (stackB != NULL) {
+          combineChains(stackA, unkLeft, chainList);
+        } else {
+          moveChain(unkLeft, chainList);
+        }
+      }
+    }
+    else {
+      moveChain(unkLeft, chainList);
+    }
   }
   else if (queryReturn == 0) {
     deleteChain(unkLeft, chainList);
@@ -837,5 +966,49 @@ void allAllRule(Chain* allLeft, Chain* allRight, ChainList* chainList) {
   }
   else {
     printf("allAllRule: unexpected error on query!");
+  }
+}
+
+void stackRule(Chain* maj, Chain* stackA, Chain* stackB, ChainList* chainList) {
+  if (maj->type != Maj) {
+    printf("problem\n");
+  }
+  if (stackA == NULL) {
+    printf("Problem\n");
+  }
+  if (maj->size != 2) {
+    printf("Problem\n");
+  }
+  int queryReturn = query(maj->last, stackA->first);
+  if (queryReturn == 2) {
+    int majSize = maj->size;
+    deleteNode(maj, maj->last, chainList);
+    if (query(maj->first, stackA->first) == 4) {
+      combineChains(stackA, maj, chainList);
+    } else {
+      if (stackB != NULL) {
+        combineChains(stackB, maj, chainList);
+      } else {
+        maj->type = All;
+        moveChain(maj, chainList);
+      }
+    }
+  }
+  else if (queryReturn == 4) {
+    deleteNode(maj, maj->first, chainList);
+    combineChains(stackA, maj, chainList);
+  }
+  else if (queryReturn == 0) {
+    deleteNode(maj, maj->first, chainList);
+    if (stackB != NULL) {
+      combineChains(stackB, maj, chainList);
+    }
+    else {
+      maj->type = All;
+      moveChain(maj, chainList);
+    }
+  }
+  else {
+    printf("majAllRule: unexpected error on query!");
   }
 }
