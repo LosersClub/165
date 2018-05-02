@@ -246,6 +246,17 @@ int execute(int n) {
   deleteChain(&separator, &head);
 
   while (head.size > 1) {
+    sortDecreasing(head.first, head.last, &head);
+    int size = 0;
+    Chain* temp = head.first;
+    while (temp != NULL) {
+      size += temp->size;
+      temp = temp->next;
+    }
+    if (head.first->size > ceil(size / 2)) {
+      return head.first->first->indices[0];
+    }
+
     Chain* first = head.first;
     Chain* second = first->next;
     Chain* next = second->next;
