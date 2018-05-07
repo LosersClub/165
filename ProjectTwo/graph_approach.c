@@ -46,6 +46,7 @@ typedef struct _ChainList {
 } ChainList;
 
 // Declared in order of definition
+Node* handleLastMajChain(ChainList* head);
 void initHead(ChainList* head);
 void addChain(Chain* chain, ChainList* head);
 void moveChain(Chain* chain, ChainList* chainList);
@@ -151,74 +152,14 @@ int execute(int n) {
   
   // Handle if only one Chain remains and it is a Maj Chain.
   if (head.size == 1 && head.first->type == Maj) {
-    Chain* maj = head.first;
-    if (maj->size > 2) {
-      printf("problem!\n");
+    Node* allNode = handleLastMajChain(&head);
+    if (query(allNode, head.first->first) == 2) {
+      deleteNode(head.first, head.first->first, &head);
     }
-    Node* all = NULL;
-    int refIndex = 1;
-    while (all == NULL) {
-      int q[4];
-      for (int i = 0; i < 4; i += 2) {
-        Node* temp = maj->first;
-        while (temp != NULL) {
-          if (temp->indices[0] == refIndex) {
-            temp = maj->first;
-            refIndex += 2;
-          }
-          else {
-            temp = temp->next;
-          }
-        }
-        q[i] = refIndex;
-        q[i + 1] = refIndex + 1;
-        refIndex += 2;
-      }
-      int queryReturn = QUERY(q);
-      if (queryReturn == 4) {
-        all = buildNode(q[0], q[1]);
-      } else {
-        Node* temp = maj->first;
-        while (temp != NULL) {
-          if (temp->indices[0] == refIndex) {
-            temp = maj->first;
-            refIndex += 2;
-          }
-          else {
-            temp = temp->next;
-          }
-        }
-        int hold = q[3];
-        q[3] = refIndex;
-        int secondQuery = QUERY(q);
-        if (secondQuery == queryReturn) {
-          all = buildNode(refIndex, hold);
-          break;
-        }
-        if (secondQuery == 4) {
-          all = buildNode(q[0], q[1]);
-          break;
-        }
-        int hold2 = q[2];
-        q[2] = hold;
-        int thirdQuery = QUERY(q);
-        if (thirdQuery == secondQuery) {
-          all = buildNode(hold2, hold);
-          break;
-        }
-        if (thirdQuery == 4) {
-          all = buildNode(hold2, hold);
-          break;
-        }
-        all = buildNode(hold2, refIndex);
-      }
+    else if (head.first->size == 2) {
+      deleteNode(head.first, head.first->last, &head);
     }
-
-    if (query(all, maj->first) == 2) {
-      deleteNode(maj, maj->first, &head);
-    } else if (maj->size == 2) {
-      deleteNode(maj, maj->last, &head);
-    }
+    free(allNode);
   }
 
   //Evaluating the results:
@@ -233,6 +174,75 @@ int execute(int n) {
   }
   deleteChainList(&head);
   return index;
+}
+
+// If the last remaining Chain is a Majority Chain, brute-force
+// find an All Node to resolve the Chain.
+Node* handleLastMajChain(ChainList* head) {
+  Chain* maj = head->first;
+  Node* all = NULL;
+  // The next element to try
+  int refIndex = 1;
+  // Continue to brute-force search until we get an All Node
+  while (all == NULL) {
+    int q[4];
+    int qSize = 0;
+    // Find four indices not contained in the Majority Chain
+    while (qSize < 4) {
+      if (!(maj->first->indices[0] == refIndex || maj->last->indices[0] == refIndex)) {
+        q[qSize++] = refIndex;
+        q[qSize++] = refIndex + 1;
+        
+      }
+      refIndex += 2;
+    }
+    // If a query on the four indices returns all, we have a
+    // viable All Node.
+    int queryReturn = QUERY(q);
+    int prevQuery = queryReturn;
+    if (queryReturn == 4) {
+      all = buildNode(q[0], q[1]);
+    } else {
+      // We need a fifth index (refIndex)
+      while (maj->first->indices[0] == refIndex || maj->last->indices[0] == refIndex) {
+        refIndex += 2;
+      }
+      // We try different combinations of these 5 indices to get an All Node.
+      // The hold variable stores that which we are ignoring for the moment.
+      // If a query for any combination returns All, we are finished.
+      // Else, there are other logical rules we can pursue to resolve into
+      // an All Node.
+
+      // Trying q[1, 2, 3, 5]
+      int hold = q[3];
+      q[3] = refIndex;
+      queryReturn = QUERY(q);
+      if (queryReturn == prevQuery) {
+        all = buildNode(refIndex, hold);
+        break;
+      }
+      if (queryReturn == 4) {
+        all = buildNode(q[0], q[1]);
+        break;
+      }
+      // Trying q[1, 2, 4, 5]
+      int hold2 = q[2];
+      q[2] = hold;
+      prevQuery = queryReturn;
+      queryReturn = QUERY(q);
+      if (queryReturn == prevQuery) {
+        all = buildNode(hold2, hold);
+        break;
+      }
+      if (queryReturn == 4) {
+        all = buildNode(hold2, hold);
+        break;
+      }
+      all = buildNode(hold2, refIndex);
+    }
+  }
+  // Return the resolved All Node
+  return all;
 }
 
 // CHAINLIST FUNCTIONS
@@ -581,16 +591,6 @@ void majMajRule(Chain* majLeft, Chain* majRight, ChainList* chainList) {
     int originalRightSize = majRight->size;
     deleteNode(majLeft, majLeft->last, chainList);
     deleteNode(majRight, majRight->first, chainList);
-   /* if (originalLeftSize == 1 || originalRightSize == 1) {
-      return;
-    }
-    if (query(majLeft->first, majRight->first) == 4) {
-      combineChains(majLeft, majRight, chainList);
-      moveChain(majLeft, chainList);
-    } else {
-      deleteChain(majLeft, chainList);
-      deleteChain(majRight, chainList);
-    }*/
   }
   else {
     printf("majMajRule: unexpected error on query!");
