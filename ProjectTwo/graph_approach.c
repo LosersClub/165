@@ -1,5 +1,5 @@
 // Anastasia Miles (90039862)
-// Kyle Bartz (####)
+// Kyle Bartz (27024310)
 
 // Project 2 Solution
 
@@ -111,9 +111,7 @@ int execute(int n) {
       }
       evalRule(left, right, &head);
       left = ref;
-      if (ref != separator) {
-        ref = ref->next;
-      }
+      ref = ref == separator ? ref : ref->next;
       // Sort the All Chains by increasing order, so the smallest
       // All Chains will always be put up against the Maj Chains.
       sortIncreasing(separator->next, head.last, &head);
@@ -153,7 +151,74 @@ int execute(int n) {
   
   // Handle if only one Chain remains and it is a Maj Chain.
   if (head.size == 1 && head.first->type == Maj) {
-    printf("Majority at Top\n");
+    Chain* maj = head.first;
+    if (maj->size > 2) {
+      printf("problem!\n");
+    }
+    Node* all = NULL;
+    int refIndex = 1;
+    while (all == NULL) {
+      int q[4];
+      for (int i = 0; i < 4; i += 2) {
+        Node* temp = maj->first;
+        while (temp != NULL) {
+          if (temp->indices[0] == refIndex) {
+            temp = maj->first;
+            refIndex += 2;
+          }
+          else {
+            temp = temp->next;
+          }
+        }
+        q[i] = refIndex;
+        q[i + 1] = refIndex + 1;
+        refIndex += 2;
+      }
+      int queryReturn = QUERY(q);
+      if (queryReturn == 4) {
+        all = buildNode(q[0], q[1]);
+      } else {
+        Node* temp = maj->first;
+        while (temp != NULL) {
+          if (temp->indices[0] == refIndex) {
+            temp = maj->first;
+            refIndex += 2;
+          }
+          else {
+            temp = temp->next;
+          }
+        }
+        int hold = q[3];
+        q[3] = refIndex;
+        int secondQuery = QUERY(q);
+        if (secondQuery == queryReturn) {
+          all = buildNode(refIndex, hold);
+          break;
+        }
+        if (secondQuery == 4) {
+          all = buildNode(q[0], q[1]);
+          break;
+        }
+        int hold2 = q[2];
+        q[2] = hold;
+        int thirdQuery = QUERY(q);
+        if (thirdQuery == secondQuery) {
+          all = buildNode(hold2, hold);
+          break;
+        }
+        if (thirdQuery == 4) {
+          all = buildNode(hold2, hold);
+          break;
+        }
+        all = buildNode(hold2, refIndex);
+      }
+    }
+
+    if (query(all, maj->first) == 2) {
+      deleteNode(maj, maj->first, &head);
+    } else if (maj->size == 2) {
+      deleteNode(maj, maj->last, &head);
+    }
   }
 
   //Evaluating the results:
@@ -166,7 +231,7 @@ int execute(int n) {
   if (index == -1) {
     index = head.first->first->indices[0];
   }
-  //deleteChainList(&head);
+  deleteChainList(&head);
   return index;
 }
 
@@ -217,7 +282,7 @@ void deleteChain(Chain* chain, ChainList* chainList) {
   // Delete all of chain's Nodes
   while (node != NULL) {
     temp = node->next;
-    //free(node);
+    free(node);
     node = temp;
   }
   if (chain->next != NULL) {
@@ -232,18 +297,19 @@ void deleteChain(Chain* chain, ChainList* chainList) {
   if (chainList->last == chain) {
     chainList->last = chain->prev;
   }
-  //free(chain);
+  free(chain);
   chainList->size -= 1;
 }
 
 // Deletes chainList and all of its Chains and Nodes.
 void deleteChainList(ChainList* head) {
-  Chain* temp = head->first;
-  while (temp != NULL) {
-    temp = temp->next;
-    deleteChain(temp->prev, head);
+  Chain* chain = head->first;
+  Chain* temp;
+  while (chain != NULL) {
+    temp = chain->next;
+    deleteChain(chain, head);
+    chain = temp;
   }
-
 }
 
 // CHAIN FUNCTIONS
@@ -263,7 +329,7 @@ int query(Node* nodeOne, Node* nodeTwo) {
 Chain* buildChain(Node* node, enum Type type) {
   Chain* chain = malloc(sizeof(Chain));
   chain->first = chain->last = node;
-  chain->size = 1;
+  chain->size = node != NULL ? 1 : 0;
   chain->type = type;
   chain->prev = chain->next = NULL;
   return chain;
@@ -337,7 +403,7 @@ void deleteNode(Chain* chain, Node* node, ChainList* chainList) {
     chain->last = node->prev;
   }
   chain->size -= 1;
-  //free(node);
+  free(node);
 
   if (chain->size == 0) {
     deleteChain(chain, chainList);
@@ -469,9 +535,13 @@ void majMajRule(Chain* majLeft, Chain* majRight, ChainList* chainList) {
     // First implicit edge, run only when majLeft->size >= 3.
     // Query the first and third Nodes in majLeft.
     // Majority is not a possible outcome for the query.
-    // If query = all, Nodes 2 and 4 must be 01 or 10, so discard them,
-    // and move the now-All Chain to the end of chainList
+    // If query = all, Nodes 2 and 4 (if majLeft->sie == 4)
+    // must be 01 or 10, so discard them, and move the now-All
+    // Chain to the end of chainList
     if (query(majLeft->first, majLeft->first->next->next) == 4) {
+      if (majLeft->size == 4) {
+        deleteNode(majLeft, majLeft->last, chainList);
+      }
       deleteNode(majLeft, majLeft->first->next, chainList);
       moveChain(majLeft, chainList);
       return;
