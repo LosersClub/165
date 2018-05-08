@@ -6,19 +6,24 @@
 // This approach utilizes the idea of a collection (ChainList)
 // of Chains, which consist of Nodes. Nodes store two indices
 // of the array for which we need to find a majority. A Chain
-// is a linked list of Nodes, where each Chain has an identity,
-// either Majority or All. An All chain consists only of Nodes
-// that we know contain all the same elements, and a Majority
-// chain consists of Nodes that, when queried together, returned
-// Majority. The ChainList is a linked list of Chains, with
-// all Majority Chains on the left and all All Chains on the right,
-// separated by a special Node.
+// is a linked list of Nodes, and each Chain has an identity,
+// either Majority or All. An All Chain consists only of Nodes
+// that we know contain the same elements (e/x, all 1), and a 
+// Majority Chain consists of Nodes such that when adjacent
+// pairs of Nodes are queried together, QCOUNT returns Majority.
+// The ChainList is a linked list of Chains that stores all 
+// Majority Chains on the left and all All Chains on the right.
+// The All Chains are kept in order of increasing size. By the
+// nature of the algorithm, a Majority Chain can have a size
+// of at most 2.
 // At the start, all Chains have only 1 Node and are classified as
 // Majority. By following a series of logical rules, we progressively
-// eliminate Nodes and Chains, or combine Chains until either 0 or 1 
-// Chains remain, and return a conclusion. By the design of the rules,
-// a Majority Chain can only be size 1 or 2.
+// eliminate Nodes and Chains, or combine Chains, until either 
+// 0 or 1 Chains remain, at which point we return a conclusion.
+
 // See the project report for more information.
+
+#define CEIL(VARIABLE) ( (VARIABLE - (int)VARIABLE)==0 ? (int)VARIABLE : (int)VARIABLE+1 )
 
 #include <stdlib.h>
 
@@ -68,8 +73,8 @@ void allAllRule(Chain* majLeft, Chain* majRight, ChainList* chainList);
 // The main function.
 int mysub(int n) {
   int index = -1;
-  if (n < 5) {
-    printf("Too few elements to determine majority.");
+  if (n < 10 || n > 10000) {
+    printf("n is out of bounds.");
     return index;
   }
   // Initialize the data structures: separate the data into 2-element Nodes
@@ -85,24 +90,24 @@ int mysub(int n) {
   Chain* separator = buildChain(NULL, All);
   addChain(separator, &head);
   // While Maj Chains exist, if they are size-1 (1 node), they will be
-  // pairwise-queried and resolved. If they are size-2 and an All Chain is
-  // available, they will be queried and resolved against an All Chain.
-  // If there are no All Chains, pairwise-query Maj Chains.
+  // pairwise queried and resolved. If they are size-2 and an All Chain is
+  // available, they will each be queried and resolved against an All Chain.
+  // If there are no All Chains available, pairwise query Maj Chains.
   while (separator != head.first) {
-    // If only one Maj Chain remains, force a Maj-All rule.
+    // If only one Maj Chain remains, force a Maj-All rule
     if (separator->prev == head.first) {
       if (separator->next != NULL) {
         evalRule(head.first, separator->next, &head);
       }
       break;
     }
-    // left and right will be the Chains we pairwise-query.
-    // ref will keep track of the Chain that will be the next "left".
+    // left and right will be the Chains we pairwise query.
+    // ref will keep track of the Chain that will be the next "left"
     Chain* left = head.first;
     Chain* right = NULL;
     Chain* ref = left->next;
-    // Loop through Maj Chains. If left is size 2, try to pairwise
-    // with an All. Otherwise just pairwise with another Maj.
+    // Loop through Maj Chains. If left is size-2, try to pairwise
+    // query with an All. Otherwise just pairwise with another Maj.
     while (ref != separator) {
       if (left->size == 2 && separator->next != NULL) {
         right = separator->next;
@@ -125,7 +130,7 @@ int mysub(int n) {
   // Resolve the remaining All Chains by merging/eliminating
   // as needed.
   while (head.size > 1) {
-    // Sort the All Chains so that the largest are merged first.
+    // Sort the All Chains so that the largest are merged first
     sortIncreasing(head.first, head.last, &head);
     int totalSize = 0;
     Chain* temp = head.last;
@@ -135,7 +140,7 @@ int mysub(int n) {
     }
     // We can stop early if the largest All Chain's size is greater
     // than half the total size.
-    if (head.last->size > ceil(totalSize / 2)) {
+    if (head.last->size > CEIL(totalSize / 2)) {
       index = head.last->first->indices[0];
       break;
     }
@@ -151,7 +156,7 @@ int mysub(int n) {
     }
   }
 
-  // Handle if only one Chain remains and it is a Maj Chain.
+  // Handle if only one Chain remains and it is a Maj Chain
   if (head.size == 1 && head.first->type == Maj) {
     Node* allNode = handleLastMajChain(&head);
     if (query(allNode, head.first->first) == 2) {
@@ -169,7 +174,7 @@ int mysub(int n) {
     // left out from the start. Return that element.
     index = (n % 2 == 1) ? n : 0;
   }
-  // There was one remaining All Chain: return either index.
+  // There was one remaining All Chain: return either index
   if (index == -1) {
     index = head.first->first->indices[0];
   }
@@ -181,9 +186,8 @@ int mysub(int n) {
 // find an All Node to resolve the Chain.
 Node* handleLastMajChain(ChainList* head) {
   Chain* maj = head->first;
-  // The next element to try
+  // refIndex is the next index in the array we want to try to use
   int refIndex = 1;
-  // Continue to brute-force search until we get an All Node
   int myarray[4];
   int qSize = 0;
   // Find four indices not contained in the Majority Chain
@@ -206,11 +210,11 @@ Node* handleLastMajChain(ChainList* head) {
   while (maj->first->indices[0] == refIndex || maj->last->indices[0] == refIndex) {
     refIndex += 2;
   }
-  // We try different combinations of these 5 indices to get an All Node.
+  // We try different 4-combinations of these 5 indices to get an All Node.
   // The hold variable stores that which we are ignoring for the moment.
-  // If a query for any combination returns All, we are finished.
+  // If a query for any combination returns all, we are finished.
   // Else, there are other logical rules we can pursue to resolve into
-  // an All Node.
+  // an All Node. Return the All Node.
 
   // Trying myarray[1, 2, 3, 5]
   int hold = myarray[3];
@@ -234,13 +238,13 @@ Node* handleLastMajChain(ChainList* head) {
 }
 
 // CHAINLIST FUNCTIONS
-// Initialize the ChainList.
+// Initialize chainList.
 void initHead(ChainList* chainList) {
   chainList->first = chainList->last = NULL;
   chainList->size = 0;
 }
 
-// Adds chain to the end of the ChainList.
+// Adds chain to the end of chainList.
 void addChain(Chain* chain, ChainList* chainList) {
   if (chainList->size == 0) {
     chainList->first = chain;
@@ -385,8 +389,7 @@ Node* removeNode(Chain* chain, Node* node, ChainList* chainList) {
   return node;
 }
 
-// Deletes node from chain, deleting the source Chain
-// if it is now empty.
+// Deletes node from chain, deleting chain if it is now empty.
 void deleteNode(Chain* chain, Node* node, ChainList* chainList) {
   if (node == NULL) {
     return;
@@ -423,7 +426,7 @@ Node* buildNode(int indexOne, int indexTwo) {
   return node;
 }
 
-// Sort the Chainst in chainList from start to end (inclusive) 
+// Sort the Chains in chainList from start to end (inclusive) 
 // by increasing size. It follows the Insertion Sort algorithm.
 void sortIncreasing(Chain* start, Chain* end, ChainList* chainList) {
   // Safety checks: chainList is valid and has more than one Chain
@@ -439,7 +442,7 @@ void sortIncreasing(Chain* start, Chain* end, ChainList* chainList) {
     Chain* temp = next;
     next = next->next;
     // Fix our start and end pointers if they participated in
-    // a swap
+    // a swap.
     while (temp != start && temp->size < temp->prev->size) {
       if (temp->prev == start) {
         start = temp;
@@ -481,11 +484,9 @@ void evalRule(Chain* left, Chain* right, ChainList* chainList) {
   else if (left->type == Maj && right->type == Maj) {
     majMajRule(left, right, chainList);
   }
-  else if (left->type == All && right->type == All) {
-    allAllRule(left, right, chainList);
-  }
+  // Must be an All-All
   else {
-    printf("This was an unexpected combination!");
+    allAllRule(left, right, chainList);
   }
 }
 
@@ -504,7 +505,7 @@ void majAllRule(Chain* maj, Chain* all, ChainList* chainList) {
     }
   }
   // If query = all, maj's Node must have been the same as the all's,
-  // add maj's Node to the all Chain. If maj had another Node, it 
+  // so add maj's Node to the all Chain. If maj had another Node, it 
   // must be 01/10, so delete it.
   else if (queryReturn == 4) {
     deleteNode(maj, maj->last->prev, chainList);
@@ -518,9 +519,6 @@ void majAllRule(Chain* maj, Chain* all, ChainList* chainList) {
     deleteNode(maj, maj->last, chainList);
     deleteNode(all, all->first, chainList);
   }
-  else {
-    printf("majAllRule: unexpected error on query!");
-  }
 }
 
 // The left Chain is Majority, and the right Chain is Majority.
@@ -528,7 +526,7 @@ void majMajRule(Chain* majLeft, Chain* majRight, ChainList* chainList) {
   // Run a query on the last Node in majLeft and the first node in majRight
   int queryReturn = query(majLeft->last, majRight->first);
   // If query = majority, combine the Chains (into majLeft).
-  // Run implicit edge rules the Chain of size at most 2
+  // Run implicit edge rules
   if (queryReturn == 2) {
     combineChains(majLeft, majRight, chainList);
     // Implicit edge handling
@@ -536,7 +534,7 @@ void majMajRule(Chain* majLeft, Chain* majRight, ChainList* chainList) {
     if (majLeft->size == 2) {
       return;
     }
-    // First implicit edge, run only when majLeft->size >= 3.
+    // First implicit edge, run only when combined majLeft->size >= 3.
     // Query the first and third Nodes in majLeft.
     // Majority is not a possible outcome for the query.
     // If query = all, Nodes 2 and 4 (if majLeft->sie == 4)
@@ -575,20 +573,16 @@ void majMajRule(Chain* majLeft, Chain* majRight, ChainList* chainList) {
     Chain* temp = buildChain(removeNode(majLeft, majLeft->last, chainList), All);
     addChain(temp, chainList);
     addNode(temp, removeNode(majRight, majRight->first, chainList));
-    // Break up remaining majLeft and majRight chains
   }
 
   // If the query on the last Node in majLeft and the first node in majRight = even,
   // just delete the two Nodes that were queried. No conclusion can be made about
-  // the rest
+  // the rest.
   else if (queryReturn == 0) {
     int originalLeftSize = majLeft->size;
     int originalRightSize = majRight->size;
     deleteNode(majLeft, majLeft->last, chainList);
     deleteNode(majRight, majRight->first, chainList);
-  }
-  else {
-    printf("majMajRule: unexpected error on query!");
   }
 }
 
@@ -611,8 +605,5 @@ void allAllRule(Chain* allLeft, Chain* allRight, ChainList* chainList) {
       deleteNode(allLeft, allLeft->first, chainList);
       deleteNode(allRight, allRight->first, chainList);
     }
-  }
-  else {
-    printf("allAllRule: unexpected error on query!");
   }
 }
