@@ -1,5 +1,6 @@
 #include "suffix_array.h"
 
+#include <algorithm>
 #include <iostream>
 #include <iomanip>
 
