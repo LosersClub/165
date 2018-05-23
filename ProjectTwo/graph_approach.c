@@ -180,69 +180,56 @@ int execute(int n) {
 // find an All Node to resolve the Chain.
 Node* handleLastMajChain(ChainList* head) {
   Chain* maj = head->first;
-  Node* all = NULL;
   // The next element to try
   int refIndex = 1;
   // Continue to brute-force search until we get an All Node
-  while (all == NULL) {
-    int q[4];
-    int qSize = 0;
-    // Find four indices not contained in the Majority Chain
-    while (qSize < 4) {
-      if (!(maj->first->indices[0] == refIndex || maj->last->indices[0] == refIndex)) {
-        q[qSize++] = refIndex;
-        q[qSize++] = refIndex + 1;
-        
-      }
-      refIndex += 2;
-    }
-    // If a query on the four indices returns all, we have a
-    // viable All Node.
-    int queryReturn = QUERY(q);
-    int prevQuery = queryReturn;
-    if (queryReturn == 4) {
-      all = buildNode(q[0], q[1]);
-    } else {
-      // We need a fifth index (refIndex)
-      while (maj->first->indices[0] == refIndex || maj->last->indices[0] == refIndex) {
-        refIndex += 2;
-      }
-      // We try different combinations of these 5 indices to get an All Node.
-      // The hold variable stores that which we are ignoring for the moment.
-      // If a query for any combination returns All, we are finished.
-      // Else, there are other logical rules we can pursue to resolve into
-      // an All Node.
+  int myarray[4];
+  int qSize = 0;
+  // Find four indices not contained in the Majority Chain
+  while (qSize < 4) {
+    if (!(maj->first->indices[0] == refIndex || maj->last->indices[0] == refIndex)) {
+      myarray[qSize++] = refIndex;
+      myarray[qSize++] = refIndex + 1;
 
-      // Trying q[1, 2, 3, 5]
-      int hold = q[3];
-      q[3] = refIndex;
-      queryReturn = QUERY(q);
-      if (queryReturn == prevQuery) {
-        all = buildNode(refIndex, hold);
-        break;
-      }
-      if (queryReturn == 4) {
-        all = buildNode(q[0], q[1]);
-        break;
-      }
-      // Trying q[1, 2, 4, 5]
-      int hold2 = q[2];
-      q[2] = hold;
-      prevQuery = queryReturn;
-      queryReturn = QUERY(q);
-      if (queryReturn == prevQuery) {
-        all = buildNode(hold2, hold);
-        break;
-      }
-      if (queryReturn == 4) {
-        all = buildNode(hold2, hold);
-        break;
-      }
-      all = buildNode(hold2, refIndex);
     }
+    refIndex += 2;
   }
-  // Return the resolved All Node
-  return all;
+  // If a query on the four indices returns all, we have a
+  // viable All Node.
+  int queryReturn = QUERY(myarray);
+  int prevQuery = queryReturn;
+  if (queryReturn == 4) {
+    return buildNode(myarray[0], myarray[1]);
+  }
+  // We need a fifth index (refIndex)
+  while (maj->first->indices[0] == refIndex || maj->last->indices[0] == refIndex) {
+    refIndex += 2;
+  }
+  // We try different combinations of these 5 indices to get an All Node.
+  // The hold variable stores that which we are ignoring for the moment.
+  // If a query for any combination returns All, we are finished.
+  // Else, there are other logical rules we can pursue to resolve into
+  // an All Node.
+
+  // Trying myarray[1, 2, 3, 5]
+  int hold = myarray[3];
+  myarray[3] = refIndex;
+  queryReturn = QUERY(myarray);
+  if (queryReturn == prevQuery) {
+    return buildNode(refIndex, hold);
+  }
+  if (queryReturn == 4) {
+    return buildNode(myarray[0], myarray[1]);
+  }
+  // Trying myarray[1, 2, 4, 5]
+  int hold2 = myarray[2];
+  myarray[2] = hold;
+  prevQuery = queryReturn;
+  queryReturn = QUERY(myarray);
+  if (queryReturn == prevQuery || queryReturn == 4) {
+    return buildNode(hold2, hold);
+  }
+  return buildNode(hold2, refIndex);
 }
 
 // CHAINLIST FUNCTIONS
@@ -326,12 +313,13 @@ void deleteChainList(ChainList* head) {
 
 // Runs a query between the two given Nodes. 
 int query(Node* nodeOne, Node* nodeTwo) {
-  int q[4] = { nodeOne->indices[0],
+  int myarray[4] = {
+    nodeOne->indices[0],
     nodeOne->indices[1],
     nodeTwo->indices[0],
     nodeTwo->indices[1]
   };
-  return QUERY(q);
+  return QUERY(myarray);
 }
 
 // Builds a new Chain with node as its first and last Node, and
