@@ -12,7 +12,6 @@ class SuffixArray {
     std::vector<Suffix> suffixes;
 
     int lcp(const Suffix& a, const Suffix& b) const;
-    int lcp(const std::string& a, const std::string& b, const int& index) const;
 };
 
 class SuffixArray::Suffix {
