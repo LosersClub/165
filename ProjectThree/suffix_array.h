@@ -6,6 +6,7 @@
 
 class SuffixArray {
   private:
+    int prevDictSize;
     const Window* window;
     class Suffix;
     std::vector<Suffix> suffixes;

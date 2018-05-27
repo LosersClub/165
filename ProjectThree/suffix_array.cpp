@@ -4,14 +4,17 @@
 #include <iomanip>
 
 SuffixArray::SuffixArray(const Window* window) : window(window) {
+  prevDictSize = 0;
   rebuild();
 }
 
 void SuffixArray::rebuild() {
-  this->suffixes.clear();
-  for (int i = 0; i < this->window->getDictSize(); i++) {
-    this->suffixes.push_back(Suffix(this->window, i));
+  if (prevDictSize < window->getDictSize()) {
+    for (int i = prevDictSize; i < this->window->getDictSize(); i++) {
+      this->suffixes.push_back(Suffix(this->window, i));
+    }
   }
+  prevDictSize = window->getDictSize();
   std::sort(this->suffixes.begin(), this->suffixes.end());
   for (std::size_t i = 1; i < this->suffixes.size(); i++) {
     this->suffixes[i].lcp = lcp(this->suffixes.at(i), this->suffixes.at(i - 1));

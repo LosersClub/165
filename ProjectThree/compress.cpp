@@ -9,7 +9,7 @@
 int main() {
   std::string str = "ABBABABBABBABAAAABABABA";
   int strIndex = 6;
-  Window window = Window(12, 5, str.substr(0, 6).c_str(), 6);
+  Window window = Window(8, 5, str.substr(0, 6).c_str(), 6);
   SuffixArray sa(&window);
   std::cout << "String: " << str << std::endl;
   std::cout << "(0,1," << window.getFromDict(0) << ")" << std::endl; // First
