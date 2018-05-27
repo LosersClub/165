@@ -5,6 +5,11 @@
 #include <iomanip>
 
 SuffixArray::SuffixArray(const std::string& str) {
+  rebuild(str);
+}
+
+void SuffixArray::rebuild(const std::string& str) {
+  this->suffixes.clear();
   for (std::string::size_type i = 0; i < str.size(); i++) {
     this->suffixes.push_back(Suffix(str.substr(i), str.size() - i));
   }

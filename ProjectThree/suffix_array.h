@@ -7,6 +7,7 @@ class SuffixArray {
     SuffixArray(const std::string& str);
     std::pair<int, int> getMatch(const std::string& query);
     void print() const;
+    void rebuild(const std::string& str);
   private:
     class Suffix;
     std::vector<Suffix> suffixes;
