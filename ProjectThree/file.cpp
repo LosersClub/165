@@ -4,11 +4,18 @@ File::File(std::string path) {
   if (this->path == "") {
     throw std::invalid_argument("No path specified.");
   }
-  this->stream.open(this->path.c_str(), std::fstream::in);
-  if (!this->stream.is_open()) {
-    throw std::invalid_argument("Path not found: " + this->path);
+  this->path = path;
+  this->open();
+}
+
+void File::open() {
+  if (!this->isOpen) {
+    this->stream.open(this->path.c_str(), std::fstream::in);
+    if (!this->stream.is_open()) {
+      throw std::invalid_argument("Path not found: " + this->path);
+    }
+    this->isOpen = true;
   }
-  this->isOpen = true;
 }
 
 void File::close() {

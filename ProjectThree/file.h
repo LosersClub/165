@@ -10,6 +10,7 @@ class File {
 
   public:
     File(std::string path);
+    void open();
     void close();
     char readChar();
     bool isFileOpen() const;
