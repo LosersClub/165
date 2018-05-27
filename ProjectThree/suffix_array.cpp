@@ -1,18 +1,18 @@
 #include "suffix_array.h"
 
-#include <algorithm>
-#include <iostream>
 #include <iomanip>
 
-SuffixArray::SuffixArray(const std::string& str) {
-  rebuild(str);
+SuffixArray::SuffixArray(const Window* window) : window(window) {
+  rebuild();
 }
 
-void SuffixArray::rebuild(const std::string& str) {
-  this->suffixes.clear();
-  for (std::string::size_type i = 0; i < str.size(); i++) {
-    this->suffixes.push_back(Suffix(str.substr(i), str.size() - i));
+void SuffixArray::rebuild() {
+  if (prevDictSize < window->getDictSize()) {
+    for (int i = prevDictSize; i < this->window->getDictSize(); i++) {
+      this->suffixes.push_back(Suffix(this->window, i));
+    }
   }
+  prevDictSize = window->getDictSize();
   std::sort(this->suffixes.begin(), this->suffixes.end());
   for (std::size_t i = 1; i < this->suffixes.size(); i++) {
     this->suffixes[i].lcp = lcp(this->suffixes.at(i), this->suffixes.at(i - 1));
@@ -23,32 +23,31 @@ void SuffixArray::print() const {
   std::cout << " i  lcp  str" << std::endl;
   std::cout << "----------------" << std::endl;
   for (Suffix s : this->suffixes) {
-    std::cout << std::setw(2) << s.index << "  " << std::setw(2) <<
-      s.lcp << "  " << s.val << std::endl;
+    std::cout << s << std::endl;
   }
 }
 
-std::pair<int, int> SuffixArray::getMatch(const std::string& query) {
+std::pair<int, int> SuffixArray::getMatch() {
   int offset = 0;
   int len = 0;
   for (int i = 0; i < this->suffixes.size(); i++) {
     Suffix current = this->suffixes[i];
 
-    if ((len > 0 && current.lcp == 0) || len == query.size()) {
+    if ((len > 0 && current.lcp == 0) || len == this->window->getLabSize()) {
       break;
     }
 
     if (len == current.lcp) {
-      int match = query.size();
-      for (int j = len; j < query.size(); j++) {
+      int match = this->window->getLabSize();
+      for (int j = len; j < this->window->getLabSize(); j++) {
         int suffixIndex = j % current.length();
-        if (query[j] != current.val[suffixIndex]) {
+        if (this->window->getFromLab(j) != current[suffixIndex]) {
           match = j;
           break;
         }
       }
       if (match > len) {
-        offset = current.index;
+        offset = this->window->getDictSize() - current.getIndex();
         len = match;
       }
     }
@@ -57,11 +56,19 @@ std::pair<int, int> SuffixArray::getMatch(const std::string& query) {
 }
 
 int SuffixArray::lcp(const Suffix& a, const Suffix& b) const {
-  int n = std::min(a.val.size(), b.val.size());
-  for (std::string::size_type i = 0; i < n; i++) {
-    if (a.val[i] != b.val[i]) {
+  int n = std::min(a.length(), b.length());
+  for (int i = 0; i < n; i++) {
+    if (a[i] != b[i]) {
       return i;
     }
   }
   return n;
+}
+
+std::ostream& operator<<(std::ostream& os, const SuffixArray::Suffix& obj) {
+  os << std::setw(2) << obj.index << "  " << std::setw(2) << obj.lcp << "  ";
+  for (int i = obj.index; i < obj.window->getDictSize(); i++) {
+    os << obj[i];
+  }
+  return os;
 }

@@ -50,25 +50,22 @@ int Window::getTail() const {
 }
 
 const char& Window::getFromDict(int index) const {
-  index = index + this->head;
-  if (this->split == this->head || this->dictSize == 0) {
+  index = (index + this->head) % this->windowCap;
+  if (this->split == this->head) {
     throw new std::invalid_argument("Dictionary is empty.");
   }
   if (index < 0 || index >= windowCap) {
     throw new std::invalid_argument("Index our of bounds for dictionary.");
   }
   //verify these bounds are right
-  if ((index < this->head && index >= this->split) || (this->head < this->split && index > this->head && index >= this->split)) {
-    throw new std::invalid_argument("Index out of bounds for dictionary.");
-  }
+  //if ((index < this->head && index >= this->split) || (this->head < this->split && index > this->head && index >= this->split)) {
+  //  throw new std::invalid_argument("Index out of bounds for dictionary.");
+  //}
   return this->array[index];
 }
 
 const char& Window::getFromLab(int index) const {
-  index = index + this->split;
-  if (this->labSize == 0) {
-    throw new std::invalid_argument("Look-ahead buffer is empty.");
-  }
+  index = (index + this->split) % this->windowCap;
   if (index < 0 || index >= windowCap) {
     throw new std::invalid_argument("Index our of bounds for look-ahead buffer.");
   }

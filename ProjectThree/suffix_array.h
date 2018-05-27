@@ -1,36 +1,56 @@
 #pragma once
-#include <string>
+#include "window.h"
+
 #include <vector>
+#include <algorithm>
+#include <iostream>
 
 class SuffixArray {
-  public:
-    SuffixArray(const std::string& str);
-    std::pair<int, int> getMatch(const std::string& query);
-    void print() const;
-    void rebuild(const std::string& str);
   private:
+    const Window* window;
+    int prevDictSize = 0;
     class Suffix;
     std::vector<Suffix> suffixes;
 
     int lcp(const Suffix& a, const Suffix& b) const;
+  public:
+    SuffixArray(const Window* window);
+    std::pair<int, int> getMatch();
+    void print() const;
+    void rebuild();
+
+    friend std::ostream& operator<<(std::ostream& os, const SuffixArray::Suffix& obj);
 };
 
 class SuffixArray::Suffix {
-  public:
-    std::string val;
+  private:
+    const Window* window;
     int index;
+  public:
     int lcp;
-    Suffix(std::string val, int index) : val(val), index(index), lcp(0) {}
-
-    std::string print() const {
-      return this->val;
-    }
+    Suffix(const Window*& window, int index) : window(window), index(index), lcp(0) {}
 
     int length() const {
-      return this->val.size();
+      return this->window->getDictSize() - index;
+    }
+
+    int getIndex() const {
+      return index;
+    }
+
+    const char& operator[](const int i) const {
+      return this->window->getFromDict(index + i);
     }
 
     bool operator<(const Suffix& other) const {
-      return this->val < other.val;
+      int n = std::min(this->length(), other.length());
+      for (int i = 0; i < n; i++) {
+        if ((*this)[i] != other[i]) {
+          return (*this)[i] < other[i];
+        }
+      }
+      return this->length() > other.length();
     }
+
+    friend std::ostream& operator<<(std::ostream& os, const Suffix& obj);
 };

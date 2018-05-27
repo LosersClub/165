@@ -1,3 +1,4 @@
+#pragma once
 // Uses a circular array
 // aka, One ring to rule them all
 
