@@ -58,9 +58,9 @@ const char& Window::getFromDict(int index) const {
     throw new std::invalid_argument("Index our of bounds for dictionary.");
   }
   //verify these bounds are right
-  if ((index < this->head && index >= this->split) || (this->head < this->split && index > this->head && index >= this->split)) {
-    throw new std::invalid_argument("Index out of bounds for dictionary.");
-  }
+  //if ((index < this->head && index >= this->split) || (this->head < this->split && index > this->head && index >= this->split)) {
+  //  throw new std::invalid_argument("Index out of bounds for dictionary.");
+  //}
   return this->array[index];
 }
 
