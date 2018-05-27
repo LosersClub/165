@@ -3,11 +3,12 @@
 
 #include <vector>
 #include <algorithm>
+#include <iostream>
 
 class SuffixArray {
   private:
-    int prevDictSize;
     const Window* window;
+    int prevDictSize = 0;
     class Suffix;
     std::vector<Suffix> suffixes;
 
@@ -17,17 +18,24 @@ class SuffixArray {
     std::pair<int, int> getMatch();
     void print() const;
     void rebuild();
+
+    friend std::ostream& operator<<(std::ostream& os, const SuffixArray::Suffix& obj);
 };
 
 class SuffixArray::Suffix {
-  public:
+  private:
     const Window* window;
     int index;
+  public:
     int lcp;
     Suffix(const Window*& window, int index) : window(window), index(index), lcp(0) {}
 
     int length() const {
       return this->window->getDictSize() - index;
+    }
+
+    int getIndex() const {
+      return index;
     }
 
     const char& operator[](const int i) const {
@@ -43,4 +51,6 @@ class SuffixArray::Suffix {
       }
       return this->length() > other.length();
     }
+
+    friend std::ostream& operator<<(std::ostream& os, const Suffix& obj);
 };

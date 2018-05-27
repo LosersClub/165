@@ -1,10 +1,8 @@
 #include "suffix_array.h"
 
-#include <iostream>
 #include <iomanip>
 
 SuffixArray::SuffixArray(const Window* window) : window(window) {
-  prevDictSize = 0;
   rebuild();
 }
 
@@ -25,12 +23,7 @@ void SuffixArray::print() const {
   std::cout << " i  lcp  str" << std::endl;
   std::cout << "----------------" << std::endl;
   for (Suffix s : this->suffixes) {
-    std::cout << std::setw(2) << s.index << "  " << std::setw(2) <<
-      s.lcp << "  ";
-    for (int i = s.index; i < s.window->getDictSize(); i++) {
-      std::cout << s[i];
-    }
-    std::cout << std::endl;
+    std::cout << s << std::endl;
   }
 }
 
@@ -54,7 +47,7 @@ std::pair<int, int> SuffixArray::getMatch() {
         }
       }
       if (match > len) {
-        offset = this->window->getDictSize() - current.index;
+        offset = this->window->getDictSize() - current.getIndex();
         len = match;
       }
     }
@@ -70,4 +63,12 @@ int SuffixArray::lcp(const Suffix& a, const Suffix& b) const {
     }
   }
   return n;
+}
+
+std::ostream& operator<<(std::ostream& os, const SuffixArray::Suffix& obj) {
+  os << std::setw(2) << obj.index << "  " << std::setw(2) << obj.lcp << "  ";
+  for (int i = obj.index; i < obj.window->getDictSize(); i++) {
+    os << obj[i];
+  }
+  return os;
 }
