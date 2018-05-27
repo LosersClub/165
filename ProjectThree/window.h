@@ -24,8 +24,8 @@ class Window {
     int getSplitIndex() const;
     int getHead() const;
     int getTail() const;
-    char getFromDict(int index) const;
-    char getFromLab(int index) const;
+    const char& getFromDict(int index) const;
+    const char& getFromLab(int index) const;
     void print();
     ~Window();
 };

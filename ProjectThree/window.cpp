@@ -49,9 +49,9 @@ int Window::getTail() const {
   return this->tail;
 }
 
-char Window::getFromDict(int index) const {
+const char& Window::getFromDict(int index) const {
   index = index + this->head;
-  if (this->split == this->head) {
+  if (this->split == this->head || this->dictSize == 0) {
     throw new std::invalid_argument("Dictionary is empty.");
   }
   if (index < 0 || index >= windowCap) {
@@ -64,8 +64,11 @@ char Window::getFromDict(int index) const {
   return this->array[index];
 }
 
-char Window::getFromLab(int index) const {
+const char& Window::getFromLab(int index) const {
   index = index + this->split;
+  if (this->labSize == 0) {
+    throw new std::invalid_argument("Look-ahead buffer is empty.");
+  }
   if (index < 0 || index >= windowCap) {
     throw new std::invalid_argument("Index our of bounds for look-ahead buffer.");
   }
