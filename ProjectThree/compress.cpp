@@ -7,15 +7,15 @@
 
 // TODO: The filename should be a command-line arg, as well as the parameters
 int main() {
-  std::string str = "baabaabac";
-  Window window = Window(17, 8, str.substr(0, 9).c_str(), 9);
-  //std::string str = "cabbage";
-  //Window window = Window(13, 6, str.substr(0, 7).c_str(), 7);
-  window.shift(8);
+  //std::string str = "baabaabac";
+  //Window window = Window(17, 8, str.substr(0, 9).c_str(), 9);
+  std::string str = "cabbage";
+  Window window = Window(13, 6, str.substr(0, 7).c_str(), 7);
+  window.shift(6);
   window.print();
   std::cout << std::endl;
   SuffixArray sa(&window);
-  sa.print();
+  //sa.print();
 
   //std::string str = "ABBABABBABBABAAAABABABA";
   //int strIndex = 6;

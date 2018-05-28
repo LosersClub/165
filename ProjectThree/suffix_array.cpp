@@ -25,69 +25,26 @@ SuffixArray::SuffixArray(const Window* window) : window(window) {
 }
 
 void SuffixArray::rebuild() {
-  for (Suffix& s : suffixes) {
-    s.index = -1;
-  }
-
-  int size = this->window->getDictSize();
-  // Build the type Map
-  bool* types = new bool[size + 1];
-  types[size] = true; // S_TYPE
-  types[size - 1] = false; // L_TYPE
-  for (int i = size - 2; i >= 0; i--) {
-    types[i] = this->window->getFromDict(i) < this->window->getFromDict(i + 1) ||
-      (this->window->getFromDict(i) == this->window->getFromDict(i + 1) && types[i + 1]);
-  }
-
-  showTypeMap(types, size + 1);
-
-  // Build the buckets array
-  int* buckets = new int[257];
-
-  // Peform a simple LMS sort guessing positions
-  getBuckets(0, size, 256, buckets, true);
-  for (int i = 0; i < size; i++) {
-    if (isLMS(i, types)) {
-      int bucketIndex = this->window->getFromDict(i);
-      this->suffixes[buckets[bucketIndex]--].index = i;
-      this->show();
-    }
-  }
-  this->suffixes[0].index = size;
-  this->show();
-
-  // Sort non-LMS strings
-  induceSortL(0, size, 256, buckets, types);
-  induceSortS(0, size, 256, buckets, types);
-
-
-  // Summary of relative order to recur on
-
-  // Sort non-LMS strings
-  //induceSortL(start, end, alphabet, buckets, types);
-  //induceSortS(start, end, alphabet, buckets, types);
-
-  free(buckets);
-  free(types);
-
-
-  //induceSort(0, window->getDictSize(), 256);
+  induceSort(nullptr, window->getDictSize(), 256);
 
   //for (std::size_t i = 1; i < this->suffixes.size(); i++) {
   //  this->suffixes[i].lcp = lcp(this->suffixes.at(i), this->suffixes.at(i - 1));
   //}
 }
 
+int SuffixArray::get(int i, int* summary) const {
+  return summary == nullptr ? this->window->getFromDict(i) : summary[i];
+}
+
 // end is exclusive, start inclusive
-void SuffixArray::induceSort(int start, int end, int alphabet) {
-  int size = end - start;
+void SuffixArray::induceSort(int* summary, int size, int alphabet) {
   // Build the type Map
   bool* types = new bool[size + 1];
   types[size] = true; // S_TYPE
   types[size - 1] = false; // L_TYPE
   for (int i = size - 2; i >= 0; i--) {
-    types[i] = this->window->getFromDict(start + i) < this->window->getFromDict(start + i + 1) ||
-      (this->window->getFromDict(start + i) == this->window->getFromDict(start + i + 1) && types[i+1]);
+    types[i] = this->get(i, summary) < this->get(i + 1, summary) ||
+      (this->get(i, summary) == this->get(i + 1, summary) && types[i + 1]);
   }
 
   showTypeMap(types, size + 1);
@@ -96,11 +53,11 @@ void SuffixArray::induceSort(int start, int end, int alphabet) {
   int* buckets = new int[alphabet + 1];
 
   // Peform a simple LMS sort guessing positions
-  getBuckets(start, end, alphabet, buckets, true);
+  getBuckets(summary, size, alphabet, buckets, true);
   for (int i = 0; i < size; i++) {
     if (isLMS(i, types)) {
-      int bucketIndex = this->window->getFromDict(start + i);
-      this->suffixes[buckets[bucketIndex]--].index = start + i;
+      int bucketIndex = this->get(i, summary);
+      this->suffixes[buckets[bucketIndex]--].index = i;
       this->show();
     }
   }
@@ -108,28 +65,116 @@ void SuffixArray::induceSort(int start, int end, int alphabet) {
   this->show();
 
   // Sort non-LMS strings
-  induceSortL(start, end, alphabet, buckets, types);
-  induceSortS(start, end, alphabet, buckets, types);
+  induceSortL(summary, size, alphabet, buckets, types);
+  induceSortS(summary, size, alphabet, buckets, types);
 
-
+  std::cout << "Summary" << std::endl;
   // Summary of relative order to recur on
   int newSize = 0;
-  for (int i = start; i < end; i++) {
+  for (int i = 0; i <= size; i++) {
     if (isLMS(this->suffixes[i].index, types)) {
       this->suffixes[newSize++].index = this->suffixes[i].index;
     }
   }
+  for (int i = newSize; i <= size; i++) {
+    this->suffixes[i].index = -1;
+  }
+  this->show();
 
+  this->suffixes[this->suffixes[0].index].index = 0;
+  int name = 1, prev = this->suffixes[0].index; // switch to set first?
+  for (int i = 1; i < newSize; i++) {
+    int pos = this->suffixes[i].index;
+    bool diff = false;
+    for (int d = 0; d < size; d++) {
+      if (this->get(pos + d, summary) != this->get(prev + d, summary) ||
+        types[pos + d] != types[prev + d]) {
+        diff = true;
+        break;
+      } else if (d > 0 && (isLMS(pos + d, types) || isLMS(prev + d, types))) {
+        break;
+      }
+    }
+    if (diff) {
+      name++;
+      prev = pos;
+    }
+    pos = pos % 2 == 0 ? pos / 2 : (pos - 1) / 2;
+    this->suffixes[newSize + pos].index = name - 1;
+    this->show();
+  }
+  int* summaryString = new int[newSize];
+  for (int i = newSize, j = 0; i <= size; i++) {
+    if (this->suffixes[i].index >= 0) {
+      summaryString[j++] = this->suffixes[i].index;
+    }
+  }
+
+  int* offsets = new int[newSize];
+  for (int i = 0; i < newSize; i++) {
+    offsets[i] = this->suffixes[i].index;
+  }
+
+  // Recur if newAlphabet < newSize (non-unique vals)
+  if (name < newSize) {
+    induceSort(summaryString, newSize, name);
+  } else {
+    this->suffixes[0].index = newSize;
+    for (int i = 0; i < newSize; i++) {
+      this->suffixes[summaryString[i]+1].index = i;
+    }
+  }
+  this->show();
+
+  std::cout << "FINAL" << std::endl;
+  // Accurate/final LMS sort
+  getBuckets(summary, size, alphabet, buckets, true);
+  for (int i = 1, j = 0; i < size; i++) {
+    if (isLMS(i, types)) {
+      summaryString[j++] = i;
+    }
+  }
+  this->show();
+  for (int i = 1; i < newSize; i++) {
+    this->suffixes[i].index = summaryString[this->suffixes[i].index];
+  }
+  this->show();
+  for (int i = newSize; i < size; i++) {
+    this->suffixes[i].index = -1;
+  }
+  this->show();
+  for (int i = newSize - 1; i >= 0; i--) {
+    int j = this->suffixes[i].index;
+    this->suffixes[i].index = -1;
+    this->suffixes[buckets[this->get(j, summary)]--].index = j;
+    this->show();
+  }
+
+
+  //for (int i = newSize - 1; i > 0; i--) {
+  //  int bucketIndex = this->get(i, summary);
+  //  this->suffixes[buckets[bucketIndex]--].index = offsets[this->suffixes[i].index];
+  //  this->show();
+  //}
+  //this->suffixes[0].index = size;
+  //this->show();
+
+  // Sort non-LMS strings
+  induceSortL(summary, size, alphabet, buckets, types);
+  induceSortS(summary, size, alphabet, buckets, types);
+
+  free(summaryString);
+  free(offsets);
   free(buckets);
   free(types);
 }
 
-void SuffixArray::getBuckets(int start, int end, int alphabet, int* buckets, bool tails) {
+void SuffixArray::getBuckets(int* summary, int size, int alphabet, int* buckets, bool tails) {
   for (int i = 0; i <= alphabet; i++) {
     buckets[i] = 0;
   }
-  for (int i = start; i < end; i++) {
-    buckets[this->window->getFromDict(i)] += 1;
+  for (int i = 0; i < size; i++) {
+    buckets[this->get(i, summary)] += 1;
   }
   int sum = 1;
   for (int i = 0; i <= alphabet; i++) {
@@ -138,27 +183,25 @@ void SuffixArray::getBuckets(int start, int end, int alphabet, int* buckets, boo
   }
 }
 
-void SuffixArray::induceSortL(int start, int end, int alphabet, int* buckets, bool* types) {
-  getBuckets(start, end, alphabet, buckets, false);
-  int size = end - start;
+void SuffixArray::induceSortL(int* summary, int size, int alphabet, int* buckets, bool* types) {
+  getBuckets(summary, size, alphabet, buckets, false);
   for (int i = 0; i < size; i++) {
     int j = this->suffixes[i].index - 1;
     if (j >= 0 && !types[j]) {
-      int bucketIndex = this->window->getFromDict(start + j);
-      this->suffixes[buckets[bucketIndex]++].index = start + j;
+      int bucketIndex = this->get(j, summary);
+      this->suffixes[buckets[bucketIndex]++].index = j;
       this->show(i);
     }
   }
 }
 
-void SuffixArray::induceSortS(int start, int end, int alphabet, int* buckets, bool* types) {
-  getBuckets(start, end, alphabet, buckets, true);
-  int size = end - start;
+void SuffixArray::induceSortS(int* summary, int size, int alphabet, int* buckets, bool* types) {
+  getBuckets(summary, size, alphabet, buckets, true);
   for (int i = size; i >= 0; i--) {
     int j = this->suffixes[i].index - 1;
     if (j >= 0 && types[j]) {
-      int bucketIndex = this->window->getFromDict(start + j);
-      this->suffixes[buckets[bucketIndex]--].index = start + j;
+      int bucketIndex = this->get(j, summary);
+      this->suffixes[buckets[bucketIndex]--].index = j;
       this->show(i);
     }
   }

@@ -12,10 +12,11 @@ class SuffixArray {
     class Suffix;
     std::vector<Suffix> suffixes;
 
-    void induceSort(int start, int end, int alphabet);
-    void induceSortL(int start, int end, int alphabet, int* buckets, bool* types);
-    void induceSortS(int start, int end, int alphabet, int* buckets, bool* types);
-    void getBuckets(int start, int end, int alphabet, int* buckets, bool tails);
+    int get(int i, int* summary) const;
+    void induceSort(int* sum, int size, int alphabet);
+    void induceSortL(int* sum, int size, int alphabet, int* buckets, bool* types);
+    void induceSortS(int* sum, int size, int alphabet, int* buckets, bool* types);
+    void getBuckets(int* sum, int size, int alphabet, int* buckets, bool tails);
 
     int lcp(const Suffix& a, const Suffix& b) const;
   public:
