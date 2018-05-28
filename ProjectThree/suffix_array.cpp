@@ -1,5 +1,5 @@
 #include "suffix_array.h"
-
+#include <algorithm>
 #include <iomanip>
 
 SuffixArray::SuffixArray(const Window* window) : window(window) {
@@ -25,6 +25,46 @@ void SuffixArray::print() const {
   for (Suffix s : this->suffixes) {
     std::cout << s << std::endl;
   }
+}
+
+void SuffixArray::buildLcp_Lr(int index, int left, int right) {
+  if (left == right) {
+    this->lcp_lr[index] = this->suffixes[left].lcp;
+    return;
+  }
+  int middle = (left + right) / 2;
+
+  buildLcp_Lr(2 * index, left, middle);
+  buildLcp_Lr(2 * index + 1, middle + 1, right);
+
+  this->lcp_lr[index] = std::min(this->lcp_lr[2 * index], this->lcp_lr[2 * index + 1]);
+}
+//https://stackoverflow.com/questions/11373453/how-does-lcp-help-in-finding-the-number-of-occurrences-of-a-pattern/11374737#11374737
+std::pair<int, int> SuffixArray::getMatchBinarySearch() {
+  int offset = 0;
+  int len = 0;
+  this->buildLcp_Lr(1, 1, this->suffixes.size() - 1);
+  int left = 0;
+  int right = this->suffixes.size() - 1;
+  while (left <= right) {
+    int middle = (left + right) / 2;
+    Suffix current = this->suffixes[middle];
+    int k = 0;
+    while (k < current.length() && k < this->window->getLabSize()) {
+      if (!(current[k] == this->window->getFromLab[k])) {
+        break;
+      }
+      k++;
+    }
+    if (k == this->window->getLabSize()) {
+      offset = this->window->getDictSize() - current.getIndex();
+      return std::pair<int, int>{k, offset};
+    }
+    if (this->window->getFromLab(k) > current[k]) {
+      //left = middle;
+    }
+  }
+
 }
 
 std::pair<int, int> SuffixArray::getMatch() {

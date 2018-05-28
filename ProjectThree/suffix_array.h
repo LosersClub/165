@@ -11,11 +11,14 @@ class SuffixArray {
     int prevDictSize = 0;
     class Suffix;
     std::vector<Suffix> suffixes;
+    std::vector<int> lcp_lr;
 
+    void buildLcp_Lr(int index, int left, int right);
     int lcp(const Suffix& a, const Suffix& b) const;
   public:
     SuffixArray(const Window* window);
     std::pair<int, int> getMatch();
+    std::pair<int, int> getMatchBinarySearch();
     void print() const;
     void rebuild();
 
