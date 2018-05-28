@@ -41,6 +41,10 @@ int Window::getSplitIndex() const {
   return this->split;
 }
 
+int Window::getDictCap() const {
+  return this->dictCap;
+}
+
 int Window::getHead() const {
   return this->head;
 }

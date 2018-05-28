@@ -12,22 +12,27 @@ class SuffixArray {
     class Suffix;
     std::vector<Suffix> suffixes;
 
+    void induceSort(int start, int end, int alphabet);
+    void induceSortL(int start, int end, int alphabet, int* buckets, bool* types);
+    void induceSortS(int start, int end, int alphabet, int* buckets, bool* types);
+    void getBuckets(int start, int end, int alphabet, int* buckets, bool tails);
+
     int lcp(const Suffix& a, const Suffix& b) const;
   public:
     SuffixArray(const Window* window);
     std::pair<int, int> getMatch();
     void print() const;
+    void show(int pos = -1) const;
     void rebuild();
 
     friend std::ostream& operator<<(std::ostream& os, const SuffixArray::Suffix& obj);
 };
 
 class SuffixArray::Suffix {
-  private:
-    const Window* window;
-    int index;
   public:
     int lcp;
+    const Window* window;
+    int index;
     Suffix(const Window*& window, int index) : window(window), index(index), lcp(0) {}
 
     int length() const {
