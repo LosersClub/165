@@ -19,6 +19,7 @@ class Window {
     int getSize() const;
     int getDictSize() const;
     int getLabSize() const;
+    int getDictCap() const;
     void add(char c);
     void add(const char* c, int size);
     void shift(int numSpots);
