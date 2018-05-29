@@ -26,11 +26,14 @@ SuffixArray::SuffixArray(const Window* window) : window(window) {
 }
 
 void SuffixArray::rebuild() {
+  for (Suffix& s : suffixes) {
+    s.index = -1;
+  }
   induceSort(nullptr, window->getDictSize(), 256);
 
-  //for (std::size_t i = 1; i < this->suffixes.size(); i++) {
-  //  this->suffixes[i].lcp = lcp(this->suffixes.at(i), this->suffixes.at(i - 1));
-  //}
+  for (std::size_t i = 1; i < this->window->getDictSize(); i++) {
+    this->suffixes[i].lcp = lcp(this->suffixes.at(i), this->suffixes.at(i - 1));
+  }
 }
 
 int SuffixArray::get(int i, int* summary) const {
@@ -48,7 +51,7 @@ void SuffixArray::induceSort(int* summary, int size, int alphabet) {
       (this->get(i, summary) == this->get(i + 1, summary) && types[i + 1]);
   }
 
-  showTypeMap(types, size + 1);
+  //showTypeMap(types, size + 1);
 
   // Build the buckets array
   int* buckets = new int[alphabet + 1];
@@ -59,17 +62,16 @@ void SuffixArray::induceSort(int* summary, int size, int alphabet) {
     if (isLMS(i, types)) {
       int bucketIndex = this->get(i, summary);
       this->suffixes[buckets[bucketIndex]--].index = i;
-      this->show();
+      //this->show();
     }
   }
   this->suffixes[0].index = size;
-  this->show();
+  //this->show();
 
   // Sort non-LMS strings
   induceSortL(summary, size, alphabet, buckets, types);
   induceSortS(summary, size, alphabet, buckets, types);
 
-  std::cout << "Summary" << std::endl;
   // Summary of relative order to recur on
   int newSize = 0;
   for (int i = 0; i <= size; i++) {
@@ -80,7 +82,7 @@ void SuffixArray::induceSort(int* summary, int size, int alphabet) {
   for (int i = newSize; i <= size; i++) {
     this->suffixes[i].index = -1;
   }
-  this->show();
+  //this->show();
 
   int* summaryString = new int[size - newSize + 1];
   int* offsets = new int[size - newSize + 1];
@@ -116,16 +118,6 @@ void SuffixArray::induceSort(int* summary, int size, int alphabet) {
     }
   }
 
-  for (int i = 0; i < newSize; i++) {
-    std::cout << offsets[i] << " ";
-  }
-  std::cout << std::endl;
-
-  for (int i = 0; i < newSize; i++) {
-    std::cout << summaryString[i] << " ";
-  }
-  std::cout << std::endl;
-
   //for (int i = 0; i < newSize; i++) {
   //  offsets[i] = this->suffixes[i].index;
   //}
@@ -139,9 +131,9 @@ void SuffixArray::induceSort(int* summary, int size, int alphabet) {
       this->suffixes[summaryString[i]+1].index = i;
     }
   }
-  this->show();
+  //this->show();
 
-  std::cout << "FINAL" << std::endl;
+  //std::cout << "FINAL" << std::endl;
   int* summarySuffix = new int[newSize + 1];
   for (int i = 0; i <= newSize; i++) {
     summarySuffix[i] = this->suffixes[i].index;
@@ -153,10 +145,10 @@ void SuffixArray::induceSort(int* summary, int size, int alphabet) {
     int stringIndex = offsets[summarySuffix[i]];
     int bucketIndex = this->get(stringIndex, summary);
     this->suffixes[buckets[bucketIndex]--].index = stringIndex;
-    this->show();
+    //this->show();
   }
   this->suffixes[0].index = size;
-  this->show();
+  //this->show();
 
   // Sort non-LMS strings
   induceSortL(summary, size, alphabet, buckets, types);
@@ -188,8 +180,9 @@ void SuffixArray::induceSortL(int* summary, int size, int alphabet, int* buckets
     int j = this->suffixes[i].index - 1;
     if (j >= 0 && !types[j]) {
       int bucketIndex = this->get(j, summary);
-      this->suffixes[buckets[bucketIndex]++].index = j;
-      this->show(i);
+      this->suffixes[buckets[bucketIndex]].index = j;
+      buckets[bucketIndex] += 1;
+      //this->show(i);
     }
   }
 }
@@ -201,7 +194,7 @@ void SuffixArray::induceSortS(int* summary, int size, int alphabet, int* buckets
     if (j >= 0 && types[j]) {
       int bucketIndex = this->get(j, summary);
       this->suffixes[buckets[bucketIndex]--].index = j;
-      this->show(i);
+      //this->show(i);
     }
   }
 }
@@ -209,7 +202,7 @@ void SuffixArray::induceSortS(int* summary, int size, int alphabet, int* buckets
 std::pair<int, int> SuffixArray::getMatch() {
   int offset = 0;
   int len = 0;
-  for (int i = 0; i < this->suffixes.size(); i++) {
+  for (int i = 1; i < this->window->getDictSize(); i++) {
     Suffix current = this->suffixes[i];
 
     if ((len > 0 && current.lcp == 0) || len == this->window->getLabSize()) {
@@ -255,8 +248,8 @@ std::ostream& operator<<(std::ostream& os, const SuffixArray::Suffix& obj) {
 void SuffixArray::print() const {
   std::cout << " i  lcp  str" << std::endl;
   std::cout << "----------------" << std::endl;
-  for (Suffix s : this->suffixes) {
-    std::cout << s << std::endl;
+  for (int i = 1; i <= this->window->getDictSize(); i++) {
+    std::cout << this->suffixes[i] << std::endl;
   }
 }
 
