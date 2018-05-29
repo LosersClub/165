@@ -1,6 +1,7 @@
 #include "suffix_array.h"
 
 #include <iomanip>
+#include <algorithm>
 
 bool isLMS(const int i, bool*& types) {
   return i > 0 && types[i] && !types[i - 1];
@@ -81,8 +82,12 @@ void SuffixArray::induceSort(int* summary, int size, int alphabet) {
   }
   this->show();
 
-  this->suffixes[this->suffixes[0].index].index = 0;
+  int* summaryString = new int[size - newSize + 1];
+  int* offsets = new int[size - newSize + 1];
+  summaryString[size - newSize] = 0;
+  offsets[size - newSize] = this->suffixes[0].index;
   int name = 1, prev = this->suffixes[0].index; // switch to set first?
+  int j = 0;
   for (int i = 1; i < newSize; i++) {
     int pos = this->suffixes[i].index;
     bool diff = false;
@@ -91,7 +96,8 @@ void SuffixArray::induceSort(int* summary, int size, int alphabet) {
         types[pos + d] != types[prev + d]) {
         diff = true;
         break;
-      } else if (d > 0 && (isLMS(pos + d, types) || isLMS(prev + d, types))) {
+      }
+      else if (d > 0 && (isLMS(pos + d, types) || isLMS(prev + d, types))) {
         break;
       }
     }
@@ -99,24 +105,33 @@ void SuffixArray::induceSort(int* summary, int size, int alphabet) {
       name++;
       prev = pos;
     }
-    pos = pos % 2 == 0 ? pos / 2 : (pos - 1) / 2;
-    this->suffixes[newSize + pos].index = name - 1;
-    this->show();
+    int index = pos % 2 == 0 ? pos / 2 : (pos - 1) / 2;
+    summaryString[index] = name - 1;
+    offsets[index] = pos;
   }
-  int* summaryString = new int[newSize];
-  for (int i = newSize, j = 0; i <= size; i++) {
-    if (this->suffixes[i].index >= 0) {
-      summaryString[j++] = this->suffixes[i].index;
+  for (int i = 0, j = 0; i <= size - newSize; i++) {
+    if (offsets[i] >= 0) {
+      offsets[j] = offsets[i];
+      summaryString[j++] = summaryString[i];
     }
   }
 
-  int* offsets = new int[newSize];
   for (int i = 0; i < newSize; i++) {
-    offsets[i] = this->suffixes[i].index;
+    std::cout << offsets[i] << " ";
   }
+  std::cout << std::endl;
+
+  for (int i = 0; i < newSize; i++) {
+    std::cout << summaryString[i] << " ";
+  }
+  std::cout << std::endl;
+
+  //for (int i = 0; i < newSize; i++) {
+  //  offsets[i] = this->suffixes[i].index;
+  //}
 
   // Recur if newAlphabet < newSize (non-unique vals)
-  if (name < newSize) {
+  if (name != newSize) {
     induceSort(summaryString, newSize, name);
   } else {
     this->suffixes[0].index = newSize;
@@ -127,37 +142,21 @@ void SuffixArray::induceSort(int* summary, int size, int alphabet) {
   this->show();
 
   std::cout << "FINAL" << std::endl;
+  int* summarySuffix = new int[newSize + 1];
+  for (int i = 0; i <= newSize; i++) {
+    summarySuffix[i] = this->suffixes[i].index;
+  }
+
   // Accurate/final LMS sort
   getBuckets(summary, size, alphabet, buckets, true);
-  for (int i = 1, j = 0; i < size; i++) {
-    if (isLMS(i, types)) {
-      summaryString[j++] = i;
-    }
-  }
-  this->show();
-  for (int i = 1; i < newSize; i++) {
-    this->suffixes[i].index = summaryString[this->suffixes[i].index];
-  }
-  this->show();
-  for (int i = newSize; i < size; i++) {
-    this->suffixes[i].index = -1;
-  }
-  this->show();
-  for (int i = newSize - 1; i >= 0; i--) {
-    int j = this->suffixes[i].index;
-    this->suffixes[i].index = -1;
-    this->suffixes[buckets[this->get(j, summary)]--].index = j;
+  for (int i = newSize; i > 1; i--) {
+    int stringIndex = offsets[summarySuffix[i]];
+    int bucketIndex = this->get(stringIndex, summary);
+    this->suffixes[buckets[bucketIndex]--].index = stringIndex;
     this->show();
   }
-
-
-  //for (int i = newSize - 1; i > 0; i--) {
-  //  int bucketIndex = this->get(i, summary);
-  //  this->suffixes[buckets[bucketIndex]--].index = offsets[this->suffixes[i].index];
-  //  this->show();
-  //}
-  //this->suffixes[0].index = size;
-  //this->show();
+  this->suffixes[0].index = size;
+  this->show();
 
   // Sort non-LMS strings
   induceSortL(summary, size, alphabet, buckets, types);
