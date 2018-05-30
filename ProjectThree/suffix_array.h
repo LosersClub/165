@@ -17,10 +17,14 @@ class SuffixArray {
     void induceSortS(int* sum, int size, int alphabet, int* buckets, bool* types);
     void getBuckets(int* sum, int size, int alphabet, int* buckets, bool tails);
 
+    int* lcp_lr;
+    void buildLcp_Lr(int index, int left, int right);
+
     int lcp(const Suffix& a, const Suffix& b) const;
   public:
     SuffixArray(const Window* window);
     std::pair<int, int> getMatch();
+    std::pair<int, int> getMatchBinarySearch();
     void print() const;
     void show(int pos = -1) const;
     void rebuild();

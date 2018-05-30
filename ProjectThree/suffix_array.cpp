@@ -19,6 +19,8 @@ void showTypeMap(bool*& types, int size) {
 }
 
 SuffixArray::SuffixArray(const Window* window) : window(window) {
+  this->lcp_lr = new int[100];
+  memset(this->lcp_lr, 10000, 100);
   for (int i = 0; i <= this->window->getDictCap(); i++) {
     this->suffixes.push_back(Suffix(this->window, -1));
   }
@@ -31,10 +33,83 @@ void SuffixArray::rebuild() {
   }
   induceSort(nullptr, window->getDictSize(), 256);
 
-  for (std::size_t i = 1; i < this->window->getDictSize(); i++) {
+  for (std::size_t i = 1; i <= this->window->getDictSize(); i++) {
     this->suffixes[i].lcp = lcp(this->suffixes.at(i), this->suffixes.at(i - 1));
   }
 }
+
+void SuffixArray::buildLcp_Lr(int index, int left, int right) {
+  int middle = (left + right) / 2;
+  if (left == right) {
+    this->lcp_lr[index] = this->suffixes[left].lcp;
+    return;
+  }
+
+  buildLcp_Lr(2 * index, left, middle);
+  buildLcp_Lr(2 * index + 1, middle + 1, right);
+
+  this->lcp_lr[index] = std::min(this->lcp_lr[2 * index], this->lcp_lr[2 * index + 1]);
+}
+
+//https://stackoverflow.com/questions/11373453/how-does-lcp-help-in-finding-the-number-of-occurrences-of-a-pattern/11374737#11374737
+std::pair<int, int> SuffixArray::getMatchBinarySearch() {
+  int lcp_lr_index = 1;
+  int offset = 0;
+  int len = 0;
+  if (this->window->getDictSize() > 1) {
+    buildLcp_Lr(1, 2, this->window->getDictSize());
+  }
+  else {
+    return std::pair<int, int>{ 0,0 };
+  }
+  int left = 0;
+  int right = this->window->getDictSize() + 1;
+  int k = 0;
+  int benchmark;
+  Suffix current = this->suffixes[0];
+  while (left <= right && right - left > 1) {
+    int middle = (left + right) / 2;
+    benchmark = middle;
+    current = this->suffixes[middle];
+    for (; k < this->window->getLabSize(); k++) {
+      int suffixIndex = k % current.length();
+      if (this->window->getFromLab(k) != current[suffixIndex]) {
+        break;
+      }
+    }
+    
+    if (k == this->window->getLabSize() || k >= current.length()) {
+      offset = this->window->getDictSize() - current.getIndex();
+      return std::pair<int, int>{k, offset};
+    }
+
+    if (this->window->getFromLab(k) > current[k]) {
+      lcp_lr_index = lcp_lr_index * 2 + 1;
+      left = middle;
+    }
+    else {
+      lcp_lr_index *= 2;
+      right = middle + 1;
+    }
+
+    int temp = -1;
+    while (left <= right && k != temp && right - left > 1) {
+      temp = this->lcp_lr[lcp_lr_index];
+      middle = (left + right) / 2;
+      if (k < this->lcp_lr[lcp_lr_index]) {
+        left = middle;
+        lcp_lr_index = lcp_lr_index * 2;
+      }
+      else if (k > this->lcp_lr[lcp_lr_index]) {
+        right = middle + 1;
+        lcp_lr_index = lcp_lr_index * 2 + 1;
+      }
+    }
+  }
+  offset = this->window->getDictSize() - current.getIndex();
+  return std::pair<int, int>{k, offset};
+}
+
 
 int SuffixArray::get(int i, int* summary) const {
   return summary == nullptr ? this->window->getFromDict(i) : summary[i];
