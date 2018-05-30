@@ -129,7 +129,7 @@ void SuffixArray::induceSort(int* summary, int size, int alphabet) {
   //showTypeMap(types, size + 1);
 
   // Build the buckets array
-  int* buckets = new int[alphabet + 1];
+  int* buckets = new int[alphabet];
 
   // Peform a simple LMS sort guessing positions
   getBuckets(summary, size, alphabet, buckets, true);
@@ -212,6 +212,7 @@ void SuffixArray::induceSort(int* summary, int size, int alphabet) {
   int* summarySuffix = new int[newSize + 1];
   for (int i = 0; i <= newSize; i++) {
     summarySuffix[i] = this->suffixes[i].index;
+    this->suffixes[i].index = -1;
   }
 
   // Accurate/final LMS sort
@@ -236,14 +237,14 @@ void SuffixArray::induceSort(int* summary, int size, int alphabet) {
 }
 
 void SuffixArray::getBuckets(int* summary, int size, int alphabet, int* buckets, bool tails) {
-  for (int i = 0; i <= alphabet; i++) {
+  for (int i = 0; i < alphabet; i++) {
     buckets[i] = 0;
   }
   for (int i = 0; i < size; i++) {
     buckets[this->get(i, summary)] += 1;
   }
   int sum = 1;
-  for (int i = 0; i <= alphabet; i++) {
+  for (int i = 0; i < alphabet; i++) {
     sum += buckets[i];
     buckets[i] = tails ? sum - 1 : sum - buckets[i];
   }
