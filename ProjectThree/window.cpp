@@ -130,6 +130,7 @@ void Window::print() {
       i = 0;
     }
   } while (i != this->head);
+  std::cout << std::endl;
 }
 
 Window::~Window() {

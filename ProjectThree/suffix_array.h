@@ -18,7 +18,7 @@ class SuffixArray {
     void getBuckets(int* sum, int size, int alphabet, int* buckets, bool tails);
 
     int* lcp_lr;
-    void buildLcp_Lr(int index, int left, int right);
+    void buildLcp_Lr(int index, int left, int right, int isLeft);
 
     int lcp(const Suffix& a, const Suffix& b) const;
   public:
@@ -28,6 +28,7 @@ class SuffixArray {
     void print() const;
     void show(int pos = -1) const;
     void rebuild();
+    ~SuffixArray();
 
     friend std::ostream& operator<<(std::ostream& os, const SuffixArray::Suffix& obj);
 };
