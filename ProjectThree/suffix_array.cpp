@@ -47,10 +47,10 @@ void SuffixArray::rebuild() {
 }
 
 void SuffixArray::buildLcp_Lr(int index, int left, int right, int isLeft) {
-  if (left > right) {
-    this->lcp_lr[right] = this->suffixes[left].lcp;
-    return;
-  }
+  //if (left > right) {
+  //  this->lcp_lr[right] = this->suffixes[left].lcp;
+  //  return;
+  //}
   int middle = (left + right) / 2;
   // not needed, according to kyle
   if (left == right) {
@@ -76,46 +76,62 @@ std::pair<int, int> SuffixArray::getMatchBinarySearch() {
   int offset = 0;
   int len = 0;
 
-  buildLcp_Lr(1, 2, this->window->getDictSize(), -1);
+  buildLcp_Lr(1, 1, this->window->getDictSize(), -1);
   int left = 1;
-  int right = this->window->getDictSize() + 1;
+  int right = this->window->getDictSize();
   int k = 0;
   Suffix best = this->suffixes[0];
-  while (left < right) {
+  int temp = 0;
+  while (left <= right) {
     int middle = (left + right) / 2;
     Suffix current = this->suffixes[middle];
-    while (k < this->window->getLabSize() &&  this->window->getFromLab(k) == current[k % current.length()]) {
-      k++;
-      best = current;
+    if (k == temp) {
+      while (k < this->window->getLabSize() &&
+        this->window->getFromLab(k) == current[k % current.length()]) {
+        k++;
+        best = current;
+      }
     }
-    
+
     if (k == this->window->getLabSize() || left == right) {
+      //std::cout << temp << " " << lcp_lr_index << std::endl;
       offset = this->window->getDictSize() - best.getIndex();
       return std::pair<int, int>{k, offset};
     }
 
-    if (this->window->getFromLab(k) > current[k]) {
+    if (k >= current.length() || this->window->getFromLab(k) > current[k]) {
+      left = lcp_lr_index == 1 ? middle : middle + 1;
       lcp_lr_index = lcp_lr_index * 2 + 1;
-      left = middle;
+      //std::cout << "right " << left << " " << " " << right << std::endl;
     }
     else {
       lcp_lr_index *= 2;
       right = middle;
+      //std::cout << "left " << left << " " <<" " << right << std::endl;
     }
 
-    int temp = -1;
+    temp = left != right ? this->lcp_lr[lcp_lr_index] : temp;
     while (left < right && k != temp) {
       temp = this->lcp_lr[lcp_lr_index];
       middle = (left + right) / 2;
       if (k < temp) {
-        left = middle;
+        left = middle + 1;
+        //std::cout << "right " << left << " " << right << std::endl;
         lcp_lr_index = lcp_lr_index * 2 + 1;
       }
       else if (k > temp) {
         right = middle;
+        //std::cout << "left " << left << " " << " " << right << std::endl;
         lcp_lr_index = lcp_lr_index * 2;
       }
     }
+    //if (left == right && k == temp) {
+    //  current = this->suffixes[left];
+    //  while (k < this->window->getLabSize() && this->window->getFromLab(k) == current[k % current.length()]) {
+    //    k++;
+    //    best = current;
+    //  }
+    //}
   }
   offset = this->window->getDictSize() - best.getIndex();
   return std::pair<int, int>{k, offset};
