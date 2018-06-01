@@ -7,9 +7,9 @@
 
 // TODO: The filename should be a command-line arg, as well as the parameters
 int main() {
-  std::string str = "ABBABABBABBABAAAABABABA";
+  std::string str = "yabbadabbadoodlydoomister";
   int strIndex = 6;
-  Window window = Window(8, 5, str.substr(0, 6).c_str(), 6);
+  Window window = Window(15, 5, str.substr(0, 6).c_str(), 6);
   SuffixArray sa(&window);
 
   std::pair<int, std::vector<char>> triple = { 1, {window.getFromDict(0)} };
@@ -18,7 +18,7 @@ int main() {
   std::cout << "String: " << str << std::endl;
 
   while (window.getLabSize() > 0) {
-    std::pair<int, int> result = sa.getMatch();
+    std::pair<int, int> result = sa.getMatchBinarySearch();
     if (result.first < 2) {
       if (lastTriple) {
         triple.first += 1;
@@ -57,6 +57,7 @@ int main() {
       }
     }
     sa.rebuild();
+    //sa.print();
   }
   system("PAUSE");
 }
