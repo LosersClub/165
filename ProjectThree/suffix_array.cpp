@@ -21,12 +21,6 @@ void showTypeMap(bool*& types, int size) {
 }
 
 SuffixArray::SuffixArray(const Window* window) : window(window) {
-  // note that arrSize is O(n)
-  // int arrSize = 2 * 2 ^ (log(N) + 1) + 1; // start from 1
-  //int size = 2 * (std::pow(2, std::log(this->window->getDictCap() + 1))) + 1;
-  //this->lcp_lr = new int[size];
-  //std::cout << size << std::endl;
-  //memset(this->lcp_lr, INT_MAX, size);
   this->lcp_lr = new int[10000];
   memset(this->lcp_lr, 10000, 10000);
   for (int i = 0; i <= this->window->getDictCap(); i++) {
@@ -46,13 +40,8 @@ void SuffixArray::rebuild() {
   }
 }
 
-void SuffixArray::buildLcp_Lr(int index, int left, int right, int isLeft) {
-  //if (left > right) {
-  //  this->lcp_lr[right] = this->suffixes[left].lcp;
-  //  return;
-  //}
+void SuffixArray::buildLcp_Lr(int index, int left, int right) {
   int middle = (left + right) / 2;
-  // not needed, according to kyle
   if (left == right) {
     if (left == 1 && this->window->getDictSize() > 1) {
       this->lcp_lr[index] = this->suffixes[left + 1].lcp;
@@ -60,83 +49,99 @@ void SuffixArray::buildLcp_Lr(int index, int left, int right, int isLeft) {
     else {
       this->lcp_lr[index] = this->suffixes[left].lcp;
     }
-    //std::cout << index << " " << this->lcp_lr[index] << std::endl;
     return;
   }
 
-  buildLcp_Lr(2 * index, left, middle, 1);
-  buildLcp_Lr(2 * index + 1, middle + 1, right, 0);
+  buildLcp_Lr(2 * index, left, middle);
+  buildLcp_Lr(2 * index + 1, middle + 1, right);
   this->lcp_lr[index] = std::min(this->lcp_lr[2 * index], this->lcp_lr[2 * index + 1]);
-  //std::cout << index << " " << this->lcp_lr[index] << "\n\t" << 2 * index << " " << 2 * index + 1 << std::endl;
 }
 
 //https://stackoverflow.com/questions/11373453/how-does-lcp-help-in-finding-the-number-of-occurrences-of-a-pattern/11374737#11374737
 std::pair<int, int> SuffixArray::getMatchBinarySearch() {
-  int lcp_lr_index = 1;
-  int offset = 0;
-  int len = 0;
-
-  buildLcp_Lr(1, 1, this->window->getDictSize(), -1);
+  buildLcp_Lr(1, 1, this->window->getDictSize());
   int left = 1;
   int right = this->window->getDictSize();
-  int k = 0;
+  int lcp = 0, len = 0, lcpIndex = 1;
   Suffix best = this->suffixes[0];
-  int temp = 0;
   while (left <= right) {
+    // Get the current suffix to observe
     int middle = (left + right) / 2;
     Suffix current = this->suffixes[middle];
-    if (k == temp) {
-      while (k < this->window->getLabSize() &&
-        this->window->getFromLab(k) == current[k % current.length()]) {
-        k++;
+    // Compare as many characters as possible, updating best
+    if (len == lcp) {
+      while (len < this->window->getLabSize() &&
+        this->window->getFromLab(len) == current[len % current.length()]) {
+        ++len;
         best = current;
       }
     }
-
-    if (k == this->window->getLabSize() || left == right) {
-      //std::cout << temp << " " << lcp_lr_index << std::endl;
-      offset = this->window->getDictSize() - best.getIndex();
-      return std::pair<int, int>{k, offset};
+    // If we found a perfect match, stop.
+    if (len == this->window->getLabSize() || left == right) {
+      break;
     }
-
-    if (k >= current.length() || this->window->getFromLab(k) > current[k]) {
-      left = lcp_lr_index == 1 ? middle : middle + 1;
-      lcp_lr_index = lcp_lr_index * 2 + 1;
-      //std::cout << "right " << left << " " << " " << right << std::endl;
+    // If P is greater than M, move right.
+    if (len >= current.length() || this->window->getFromLab(len) > current[len]) {
+      moveRight(&lcpIndex, &middle, &left);
     }
+    // Else, move left
     else {
-      lcp_lr_index *= 2;
-      right = middle;
-      //std::cout << "left " << left << " " <<" " << right << std::endl;
+      moveLeft(&lcpIndex, &middle, &right);
     }
 
-    temp = left != right ? this->lcp_lr[lcp_lr_index] : temp;
-    while (left < right && k != temp) {
-      temp = this->lcp_lr[lcp_lr_index];
-      middle = (left + right) / 2;
-      if (k < temp) {
-        left = middle + 1;
-        //std::cout << "right " << left << " " << right << std::endl;
-        lcp_lr_index = lcp_lr_index * 2 + 1;
+    // BEGIN CASES
+    while (left < right && len != (lcp = this->lcp_lr[lcpIndex])) {
+      // Case One: want to move between M' and either L or R
+      if (len < lcp) {
+        moveM_end(&middle, &lcpIndex, &left, &right);
       }
-      else if (k > temp) {
-        right = middle;
-        //std::cout << "left " << left << " " << " " << right << std::endl;
-        lcp_lr_index = lcp_lr_index * 2;
+      // Case Two: want to move between M and M'
+      else if (len > lcp) {
+        moveM_M(&middle, &lcpIndex, &left, &right);
       }
+      lcp = this->lcp_lr[lcpIndex];
     }
-    //if (left == right && k == temp) {
-    //  current = this->suffixes[left];
-    //  while (k < this->window->getLabSize() && this->window->getFromLab(k) == current[k % current.length()]) {
-    //    k++;
-    //    best = current;
-    //  }
-    //}
+    if (left == right) {
+      lcp = this->window->getDictSize() == left ? this->lcp_lr[lcpIndex] : this->suffixes[left + 1].lcp;
+    }
   }
-  offset = this->window->getDictSize() - best.getIndex();
-  return std::pair<int, int>{k, offset};
+  return std::pair<int, int>{len, this->window->getDictSize() - best.getIndex()};
 }
 
+void SuffixArray::moveRight(int* lcpIndex, int* middle, int* left) {
+  *left = *middle + 1;
+  *lcpIndex = *lcpIndex * 2 + 1;
+}
+
+void SuffixArray::moveLeft(int* lcpIndex, int* middle, int* right) {
+  *right = *middle;
+  *lcpIndex = *lcpIndex * 2;
+}
+
+void SuffixArray::moveM_end(int* oldMiddle, int* lcpIndex, int* left, int* right) {
+  int newMiddle = (*left + *right - 1) / 2;
+  if (newMiddle < *oldMiddle) {
+    *right = newMiddle;
+    *lcpIndex = *lcpIndex * 2;
+  }
+  else {
+    *left = newMiddle + (*right - *left == 1 ? 1 : 0);
+    *lcpIndex = *lcpIndex * 2 + 1;
+  }
+}
+
+void SuffixArray::moveM_M(int* oldMiddle, int* lcpIndex, int* left, int* right) {
+  int newMiddle = (*left + *right - 1) / 2;
+  if (newMiddle < *oldMiddle) {
+    *left = newMiddle + (*right - *left == 1 ? 1 : 0);
+    *lcpIndex = *lcpIndex * 2 + 1;
+  }
+  else {
+    *right = newMiddle;
+    *lcpIndex = *lcpIndex * 2;
+  }
+
+}
 
 int SuffixArray::get(int i, int* summary) const {
   return summary == nullptr ? this->window->getFromDict(i) : summary[i];

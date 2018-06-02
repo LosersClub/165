@@ -16,9 +16,12 @@ class SuffixArray {
     void induceSortL(int* sum, int size, int alphabet, int* buckets, bool* types);
     void induceSortS(int* sum, int size, int alphabet, int* buckets, bool* types);
     void getBuckets(int* sum, int size, int alphabet, int* buckets, bool tails);
-
+    void moveM_end(int* oldMiddle, int* lcpIndex, int* left, int* right);
+    void moveM_M(int* oldMiddle, int* lcpIndex, int* left, int* right);
+    void moveRight(int* lcpIndex, int* middle, int* left);
+    void moveLeft(int* lcpIndex, int* middle, int* right);
     int* lcp_lr;
-    void buildLcp_Lr(int index, int left, int right, int isLeft);
+    void buildLcp_Lr(int index, int left, int right);
 
     int lcp(const Suffix& a, const Suffix& b) const;
   public:
