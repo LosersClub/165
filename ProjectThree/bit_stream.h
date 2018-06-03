@@ -42,7 +42,8 @@ class BitStreamReader : public BitStream {
     std::pair<int, int> getDouble();
     std::pair<int, std::vector<char>> getTriple();
 
-    int getN();
+    unsigned int getN();
+    unsigned int getS();
 
   private:
     Mask *nMask, *lMask, *sMask;

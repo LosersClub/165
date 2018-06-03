@@ -32,6 +32,14 @@ int main(int argc, char** argv) {
     return 0;
   }
   BitStreamReader reader = BitStreamReader(byte);
+
+  if (reader.getN() < 512 || reader.getN() > 16384 ||
+    reader.getS() - 1 < 1 || reader.getS() - 1 > 31) {
+    std::cerr << "Read arguments out of range: invalid input file." << std::endl;
+    return 0;
+  }
+
+
   Window window = Window(reader.getN());
 
   while (stream->peek() != EOF) {

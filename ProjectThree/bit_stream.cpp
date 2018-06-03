@@ -144,6 +144,10 @@ void BitStreamReader::readHeader(const unsigned char& header) {
   this->sMask = new Mask(((header & (0x7 << 1)) >> 1) + 1);
 }
 
-int BitStreamReader::getN() {
-  return 2 << this->nMask->size;
+unsigned int BitStreamReader::getN() {
+  return 2 << this->nMask->size - 1;
+}
+
+unsigned int BitStreamReader::getS() {
+  return 2 << this->sMask->size - 1;
 }
