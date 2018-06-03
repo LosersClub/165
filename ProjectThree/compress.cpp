@@ -27,7 +27,13 @@ bool parseArguments(int argc, char**argv, int* N, int* L, int* S, std::string* p
       *path = std::string(argv[i]);
     }
     else {
-      int number = std::stoi(std::string(argv[i]).substr(3));
+      std::string arg = std::string(argv[i]);
+      if (arg.length() < 4) {
+        std::cerr << "Invalid argument: " << arg << "\n"
+          "Must be in the form of -N=# for args N, L, S." << std::endl;
+        return false;
+      }
+      int number = std::stoi(arg.substr(3));
       if (argv[i][1] == 'N') {
         if (number < 9 || number > 14) {
           std::cerr << "N argument out of range." << std::endl;
@@ -50,7 +56,8 @@ bool parseArguments(int argc, char**argv, int* N, int* L, int* S, std::string* p
         *S = number;
       }
       else {
-        std::cerr << "Unrecognized argument: " << argv[i] << std::endl;
+        std::cerr << "Unrecognized argument: " << arg.substr(0,3) << std::endl;
+        return false;
       }
     }
   }
@@ -69,7 +76,7 @@ int main(int argc, char** argv) {
     return 0;
   }
   if (path == "") {
-    std::cout << "No file path set." << std::endl;
+    std::cerr << "No file path set." << std::endl;
     return 0;
   }
 
@@ -77,17 +84,24 @@ int main(int argc, char** argv) {
   int labSize = pow(2, L);
   int maxTripleLength = pow(2, S) - 1;
 
-  BitStreamWriter writer = BitStreamWriter(N, L, S);
-  std::cout << writer.writeHeader();
-
-  File file = File(path);
+  File* file = nullptr;
+  try {
+    file = new File(path);
+  }
+  catch (const std::exception& e) {
+    std::cerr << e.what() << std::endl;
+    return 0;
+  }
   std::string init_string;
   int index = 0;
-  bool y = file.hasNextChar();
-  while (index < labSize + 1 && file.hasNextChar()) {
-    init_string += file.readChar();
+
+  while (index < labSize + 1 && file->hasNextChar()) {
+    init_string += file->readChar();
     index++;
   }
+
+  BitStreamWriter writer = BitStreamWriter(N, L, S);
+  std::cout << writer.writeHeader();
 
   Window window = Window(windowSize, labSize, init_string.c_str(), index);
   SuffixArray sa(&window);
@@ -96,6 +110,12 @@ int main(int argc, char** argv) {
   bool lastTriple = true;
 
   while (window.getLabSize() > 0) {
+    // Check if we've reached S capacity; if so, output the triple
+    if (lastTriple && triple.first == maxTripleLength) {
+      writer.writeTriple(triple.first, triple.second);
+      lastTriple = false;
+    }
+
     std::pair<int, int> result = sa.getMatchBinarySearch();
     if (result.first < 2) {
       if (lastTriple) {
@@ -106,9 +126,9 @@ int main(int argc, char** argv) {
         triple = { 1, {window.getFromLab(0)} };
         lastTriple = true;
       }
-      if (file.hasNextChar()) {
+      if (file->hasNextChar()) {
         index++;
-        window.add(file.readChar());
+        window.add(file->readChar());
       } else {
         window.shift(1);
       }
@@ -118,12 +138,12 @@ int main(int argc, char** argv) {
         lastTriple = false;
       }
       writer.writeDouble(result.first, result.second);
-      if (file.hasNextChar()) {
+      if (file->hasNextChar()) {
         int i = 0;
-        for (i = 0; i < result.first && file.hasNextChar(); i++) {
-          window.add(file.readChar());
+        for (i = 0; i < result.first && file->hasNextChar(); i++) {
+          window.add(file->readChar());
         }
-        if (!file.hasNextChar()) {
+        if (!file->hasNextChar()) {
           window.shift(result.first - i);
         }
       } else {
@@ -136,6 +156,6 @@ int main(int argc, char** argv) {
     writer.writeTriple(triple.first, triple.second);
   }
   writer.writeEOF();
-  file.close();
+  file->close();
   return 1;
 }

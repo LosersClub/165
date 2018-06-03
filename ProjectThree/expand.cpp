@@ -21,7 +21,7 @@ int main(int argc, char** argv) {
       file = new File(argv[1]);
     }
     catch (const std::exception& e) {
-      std::cerr << e.what();
+      std::cerr << e.what() << std::endl;
       return 0;
     }
     stream = &(file->stream);
