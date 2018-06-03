@@ -25,6 +25,19 @@ Window::Window(int windowCap, int labCap, const char* initChars, int initCharsSi
   this->tail = initCharsSize;
 }
 
+Window::Window(int windowCap) {
+  this->windowCap = windowCap;
+  this->labCap = 0;
+  this->dictCap = windowCap;
+  this->head = 0;
+  this->tail = 0;
+  array = new char[windowCap];
+  this->split = 1;
+  this->windowSize = 0;
+  this->dictSize = 0;
+  this->labSize = 0;
+}
+
 int Window::getSize() const {
   return this->windowSize;
 }
@@ -110,6 +123,21 @@ void Window::add(char c) {
   this->labSize++;
   this->tail++;
   this->shift(1);
+}
+
+void Window::addNoLab(char c) {
+  if (this->tail >= windowCap) {
+    this->tail = 0;
+  }
+  this->array[this->tail] = c;
+  this->windowSize++;
+  this->tail++;
+  if (this->dictSize + 1 > this->dictCap) {
+    this->head = ((this->head + 1) % this->windowCap);
+  }
+  this->split = ((this->split + 1) % this->windowCap);
+  this->dictSize = std::min(dictCap, dictSize + 1);
+  this->windowSize = dictSize;
 }
 
 void Window::print() {

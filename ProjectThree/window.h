@@ -16,12 +16,14 @@ class Window {
     int labSize;
   public:
     Window(int windowCap, int labCap, const char* initChars, int initCharsSize);
+    Window(int windowCap);
     int getSize() const;
     int getDictSize() const;
     int getLabSize() const;
     int getDictCap() const;
     void add(char c);
     void add(const char* c, int size);
+    void addNoLab(char c);
     void shift(int numSpots);
     int getSplitIndex() const;
     int getHead() const;
