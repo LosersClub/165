@@ -2,8 +2,26 @@
 
 #include <iomanip>
 #include <algorithm>
-#include <cmath>
-#include <climits>
+
+SuffixArray::SuffixArray(const Window* window) : window(window) {
+  this->suffixes.reserve(this->window->getDictSize() + 1);
+  for (int i = 0; i <= this->window->getDictCap(); i++) {
+    this->suffixes.push_back(Suffix(this->window, -1));
+  }
+
+  this->lcp_lr = new int[10000];
+  memset(this->lcp_lr, 10000, 10000);
+
+  rebuild();
+}
+
+void SuffixArray::rebuild() {
+  induceSort(0, this->window->getDictSize() + 1, 256);
+
+  for (int i = 1; i <= this->window->getDictSize(); i++) {
+    this->suffixes[i].lcp = lcp(this->suffixes.at(i), this->suffixes.at(i - 1));
+  }
+}
 
 bool isLMS(const int i, bool*& types) {
   return i > 0 && types[i] && !types[i - 1];
@@ -20,39 +38,134 @@ void showTypeMap(bool*& types, int size) {
   std::cout << std::endl;
 }
 
-SuffixArray::SuffixArray(const Window* window) : window(window) {
-  // note that arrSize is O(n)
-  // int arrSize = 2 * 2 ^ (log(N) + 1) + 1; // start from 1
-  //int size = 2 * (std::pow(2, std::log(this->window->getDictCap() + 1))) + 1;
-  //this->lcp_lr = new int[size];
-  //std::cout << size << std::endl;
-  //memset(this->lcp_lr, INT_MAX, size);
-  this->lcp_lr = new int[10000];
-  memset(this->lcp_lr, 10000, 10000);
-  for (int i = 0; i <= this->window->getDictCap(); i++) {
-    this->suffixes.push_back(Suffix(this->window, -1));
+#define comp(i) (start > 0 ? this->suffixes[start + i].index : \
+                    (i >= this->window->getDictSize() ? '\0' : this->window->getFromDict(i)))
+void SuffixArray::induceSort(int start, int size, int alphabet) {
+  bool* types = new bool[size];
+  types[size - 1] = true; // S_TYPE
+  types[size - 2] = false; // L_TYPE
+  for (int i = size - 3; i >= 0; i--) {
+    types[i] = comp(i) < comp(i + 1) || (comp(i) == comp(i + 1) && types[i + 1]);
   }
-  rebuild();
+
+  int* buckets = new int[alphabet + 1];
+  getBuckets(buckets, start, size, alphabet, true);
+  for (int i = 0; i < size; i++) {
+    this->suffixes[i].index = -1;
+  }
+  for (int i = 1; i < size; i++) {
+    if (isLMS(i, types)) {
+      this->suffixes[--buckets[comp(i)]].index = i;
+    }
+  }
+  induceSortL(start, size, alphabet, buckets, types);
+  induceSortS(start, size, alphabet, buckets, types);
+
+  int newSize = 0;
+  for (int i = 0; i < size; i++) {
+    if (isLMS(this->suffixes[i].index, types)) {
+      this->suffixes[newSize++].index = this->suffixes[i].index;
+    }
+  }
+  for (int i = newSize; i < size; i++) {
+    this->suffixes[i].index = -1;
+  }
+
+  int name = 0, prev = -1;
+  for (int i = 0; i < newSize; i++) {
+    int pos = this->suffixes[i].index;
+    bool diff = false;
+    for (int j = 0; j < size; j++) {
+      if (prev == -1 || comp(pos + j) != comp(prev + j) || types[pos + j] != types[prev + j]) {
+        diff = true;
+        break;
+      } else if (j > 0 && (isLMS(pos + j, types) || isLMS(prev + j, types))) {
+        break;
+      }
+    } 
+    if (diff) {
+      name++;
+      prev = pos;
+    }
+    pos = (pos % 2 == 0) ? pos / 2 : (pos - 1) / 2;
+    suffixes[pos + newSize].index = name - 1;
+  }
+
+  for (int i = size - 1, j = size - 1; i >= newSize; i--) {
+    if (this->suffixes[i].index >= 0) {
+      this->suffixes[j--].index = suffixes[i].index;
+    }
+  }
+
+  if (name < newSize) {
+    induceSort(size - newSize, newSize, name - 1);
+  } else {
+    for (int i = 0; i < newSize; i++) {
+      this->suffixes[this->suffixes[size - newSize + i].index].index = i;
+    }
+  }
+
+  getBuckets(buckets, start, size, alphabet, true);
+  for (int i = 1, j = 0; i < size; i++) {
+    if (isLMS(i, types)) {
+      this->suffixes[size - newSize + j].index = i;
+      j += 1;
+    }
+  }
+
+  for (int i = 0; i < newSize; i++) {
+    this->suffixes[i].index = this->suffixes[size - newSize + this->suffixes[i].index].index;
+  }
+  for (int i = newSize; i < size; i++) {
+    this->suffixes[i].index = -1;
+  }
+  for (int i = newSize - 1; i >= 0; i--) {
+    int j = this->suffixes[i].index;
+    this->suffixes[i].index = -1;
+    this->suffixes[--buckets[comp(j)]].index = j;
+  }
+  induceSortL(start, size, alphabet, buckets, types);
+  induceSortS(start, size, alphabet, buckets, types);
+  free(buckets);
+  free(types);
 }
 
-void SuffixArray::rebuild() {
-  for (Suffix& s : suffixes) {
-    s.index = -1;
+void SuffixArray::getBuckets(int* buckets, int start, int size, int alphabet, bool tails) {
+  for (int i = 0; i <= alphabet; i++) {
+    buckets[i] = 0;
   }
-  induceSort(nullptr, window->getDictSize(), 256);
-
-  for (std::size_t i = 1; i <= this->window->getDictSize(); i++) {
-    this->suffixes[i].lcp = lcp(this->suffixes.at(i), this->suffixes.at(i - 1));
+  for (int i = 0; i < size; i++) {
+    buckets[comp(i)] += 1;
+  }
+  int sum = 0;
+  for (int i = 0; i <= alphabet; i++) {
+    sum += buckets[i];
+    buckets[i] = tails ? sum : sum - buckets[i];
   }
 }
 
-void SuffixArray::buildLcp_Lr(int index, int left, int right, int isLeft) {
-  //if (left > right) {
-  //  this->lcp_lr[right] = this->suffixes[left].lcp;
-  //  return;
-  //}
+void SuffixArray::induceSortL(int start, int size, int alphabet, int* buckets, bool* types) {
+  getBuckets(buckets, start, size, alphabet, false);
+  for (int i = 0; i < size; i++) {
+    int j = this->suffixes[i].index - 1;
+    if (j >= 0 && !types[j]) {
+      this->suffixes[buckets[comp(j)]++].index = j;
+    }
+  }
+}
+
+void SuffixArray::induceSortS(int start, int size, int alphabet, int* buckets, bool* types) {
+  getBuckets(buckets, start, size, alphabet, true);
+  for (int i = size - 1; i >= 0; i--) {
+    int j = this->suffixes[i].index - 1;
+    if (j >= 0 && types[j]) {
+      this->suffixes[--buckets[comp(j)]].index = j;
+    }
+  }
+}
+
+void SuffixArray::buildLcp_Lr(int index, int left, int right) {
   int middle = (left + right) / 2;
-  // not needed, according to kyle
   if (left == right) {
     if (left == 1 && this->window->getDictSize() > 1) {
       this->lcp_lr[index] = this->suffixes[left + 1].lcp;
@@ -60,246 +173,97 @@ void SuffixArray::buildLcp_Lr(int index, int left, int right, int isLeft) {
     else {
       this->lcp_lr[index] = this->suffixes[left].lcp;
     }
-    //std::cout << index << " " << this->lcp_lr[index] << std::endl;
     return;
   }
 
-  buildLcp_Lr(2 * index, left, middle, 1);
-  buildLcp_Lr(2 * index + 1, middle + 1, right, 0);
+  buildLcp_Lr(2 * index, left, middle);
+  buildLcp_Lr(2 * index + 1, middle + 1, right);
   this->lcp_lr[index] = std::min(this->lcp_lr[2 * index], this->lcp_lr[2 * index + 1]);
-  //std::cout << index << " " << this->lcp_lr[index] << "\n\t" << 2 * index << " " << 2 * index + 1 << std::endl;
 }
 
-//https://stackoverflow.com/questions/11373453/how-does-lcp-help-in-finding-the-number-of-occurrences-of-a-pattern/11374737#11374737
-std::pair<int, int> SuffixArray::getMatchBinarySearch() {
-  int lcp_lr_index = 1;
-  int offset = 0;
-  int len = 0;
+void SuffixArray::moveRight(int* lcpIndex, int* middle, int* left) {
+  *left = *middle + 1;
+  *lcpIndex = *lcpIndex * 2 + 1;
+}
 
-  buildLcp_Lr(1, 1, this->window->getDictSize(), -1);
+void SuffixArray::moveLeft(int* lcpIndex, int* middle, int* right) {
+  *right = *middle;
+  *lcpIndex = *lcpIndex * 2;
+}
+
+void SuffixArray::moveM_end(int* oldMiddle, int* lcpIndex, int* left, int* right) {
+  int newMiddle = (*left + *right - 1) / 2;
+  if (newMiddle < *oldMiddle) {
+    *right = newMiddle;
+    *lcpIndex = *lcpIndex * 2;
+  }
+  else {
+    *left = newMiddle + (*right - *left == 1 ? 1 : 0);
+    *lcpIndex = *lcpIndex * 2 + 1;
+  }
+}
+
+void SuffixArray::moveM_M(int* oldMiddle, int* lcpIndex, int* left, int* right) {
+  int newMiddle = (*left + *right - 1) / 2;
+  if (newMiddle < *oldMiddle) {
+    *left = newMiddle + (*right - *left == 1 ? 1 : 0);
+    *lcpIndex = *lcpIndex * 2 + 1;
+  }
+  else {
+    *right = newMiddle;
+    *lcpIndex = *lcpIndex * 2;
+  }
+
+}
+
+std::pair<int, int> SuffixArray::getMatchBinarySearch() {
+  buildLcp_Lr(1, 1, this->window->getDictSize());
   int left = 1;
   int right = this->window->getDictSize();
-  int k = 0;
+  int lcp = 0, len = 0, lcpIndex = 1;
   Suffix best = this->suffixes[0];
-  int temp = 0;
   while (left <= right) {
+    // Get the current suffix to observe
     int middle = (left + right) / 2;
     Suffix current = this->suffixes[middle];
-    if (k == temp) {
-      while (k < this->window->getLabSize() &&
-        this->window->getFromLab(k) == current[k % current.length()]) {
-        k++;
+    // Compare as many characters as possible, updating best
+    if (len == lcp) {
+      while (len < this->window->getLabSize() &&
+        this->window->getFromLab(len) == current[len % current.length()]) {
+        ++len;
         best = current;
       }
     }
-
-    if (k == this->window->getLabSize() || left == right) {
-      //std::cout << temp << " " << lcp_lr_index << std::endl;
-      offset = this->window->getDictSize() - best.getIndex();
-      return std::pair<int, int>{k, offset};
+    // If we found a perfect match, stop.
+    if (len == this->window->getLabSize() || left == right) {
+      break;
     }
-
-    if (k >= current.length() || this->window->getFromLab(k) > current[k]) {
-      left = lcp_lr_index == 1 ? middle : middle + 1;
-      lcp_lr_index = lcp_lr_index * 2 + 1;
-      //std::cout << "right " << left << " " << " " << right << std::endl;
+    // If P is greater than M, move right.
+    if (len == current.length() || this->window->getFromLab(len) > current[len % current.length()]) {
+      moveRight(&lcpIndex, &middle, &left);
     }
+    // Else, move left
     else {
-      lcp_lr_index *= 2;
-      right = middle;
-      //std::cout << "left " << left << " " <<" " << right << std::endl;
+      moveLeft(&lcpIndex, &middle, &right);
     }
 
-    temp = left != right ? this->lcp_lr[lcp_lr_index] : temp;
-    while (left < right && k != temp) {
-      temp = this->lcp_lr[lcp_lr_index];
-      middle = (left + right) / 2;
-      if (k < temp) {
-        left = middle + 1;
-        //std::cout << "right " << left << " " << right << std::endl;
-        lcp_lr_index = lcp_lr_index * 2 + 1;
+    // BEGIN CASES
+    while (left < right && len != (lcp = this->lcp_lr[lcpIndex])) {
+      // Case One: want to move between M' and either L or R
+      if (len < lcp) {
+        moveM_end(&middle, &lcpIndex, &left, &right);
       }
-      else if (k > temp) {
-        right = middle;
-        //std::cout << "left " << left << " " << " " << right << std::endl;
-        lcp_lr_index = lcp_lr_index * 2;
+      // Case Two: want to move between M and M'
+      else if (len > lcp) {
+        moveM_M(&middle, &lcpIndex, &left, &right);
       }
+      lcp = this->lcp_lr[lcpIndex];
     }
-    //if (left == right && k == temp) {
-    //  current = this->suffixes[left];
-    //  while (k < this->window->getLabSize() && this->window->getFromLab(k) == current[k % current.length()]) {
-    //    k++;
-    //    best = current;
-    //  }
-    //}
-  }
-  offset = this->window->getDictSize() - best.getIndex();
-  return std::pair<int, int>{k, offset};
-}
-
-
-int SuffixArray::get(int i, int* summary) const {
-  return summary == nullptr ? this->window->getFromDict(i) : summary[i];
-}
-
-// end is exclusive, start inclusive
-void SuffixArray::induceSort(int* summary, int size, int alphabet) {
-  // Build the type Map
-  bool* types = new bool[size + 1];
-  types[size] = true; // S_TYPE
-  types[size - 1] = false; // L_TYPE
-  for (int i = size - 2; i >= 0; i--) {
-    types[i] = this->get(i, summary) < this->get(i + 1, summary) ||
-      (this->get(i, summary) == this->get(i + 1, summary) && types[i + 1]);
-  }
-
-  //showTypeMap(types, size + 1);
-
-  // Build the buckets array
-  int* buckets = new int[alphabet];
-
-  // Peform a simple LMS sort guessing positions
-  getBuckets(summary, size, alphabet, buckets, true);
-  for (int i = 0; i < size; i++) {
-    if (isLMS(i, types)) {
-      int bucketIndex = this->get(i, summary);
-      this->suffixes[buckets[bucketIndex]--].index = i;
-      //this->show();
+    if (left == right) {
+      lcp = this->window->getDictSize() == left ? this->lcp_lr[lcpIndex] : this->suffixes[left + 1].lcp;
     }
   }
-  this->suffixes[0].index = size;
-  //this->show();
-
-  // Sort non-LMS strings
-  induceSortL(summary, size, alphabet, buckets, types);
-  induceSortS(summary, size, alphabet, buckets, types);
-
-  // Summary of relative order to recur on
-  int newSize = 0;
-  for (int i = 0; i <= size; i++) {
-    if (isLMS(this->suffixes[i].index, types)) {
-      this->suffixes[newSize++].index = this->suffixes[i].index;
-    }
-  }
-  for (int i = newSize; i <= size; i++) {
-    this->suffixes[i].index = -1;
-  }
-  //this->show();
-
-  int* summaryString = new int[size - newSize + 1];
-  int* offsets = new int[size - newSize + 1];
-  summaryString[size - newSize] = 0;
-  offsets[size - newSize] = this->suffixes[0].index;
-  int name = 1, prev = this->suffixes[0].index; // switch to set first?
-  int j = 0;
-  for (int i = 1; i < newSize; i++) {
-    int pos = this->suffixes[i].index;
-    bool diff = false;
-    for (int d = 0; d < size; d++) {
-      if (this->get(pos + d, summary) != this->get(prev + d, summary) ||
-        types[pos + d] != types[prev + d]) {
-        diff = true;
-        break;
-      }
-      else if (d > 0 && (isLMS(pos + d, types) || isLMS(prev + d, types))) {
-        break;
-      }
-    }
-    if (diff) {
-      name++;
-      prev = pos;
-    }
-    int index = pos % 2 == 0 ? pos / 2 : (pos - 1) / 2;
-    summaryString[index] = name - 1;
-    offsets[index] = pos;
-  }
-  for (int i = 0, j = 0; i <= size - newSize; i++) {
-    if (offsets[i] >= 0) {
-      offsets[j] = offsets[i];
-      summaryString[j++] = summaryString[i];
-    }
-  }
-
-  //for (int i = 0; i < newSize; i++) {
-  //  offsets[i] = this->suffixes[i].index;
-  //}
-
-  // Recur if newAlphabet < newSize (non-unique vals)
-  if (name != newSize) {
-    induceSort(summaryString, newSize, name);
-  } else {
-    this->suffixes[0].index = newSize;
-    for (int i = 0; i < newSize; i++) {
-      this->suffixes[summaryString[i]+1].index = i;
-    }
-  }
-  //this->show();
-
-  //std::cout << "FINAL" << std::endl;
-  int* summarySuffix = new int[newSize + 1];
-  for (int i = 0; i <= newSize; i++) {
-    summarySuffix[i] = this->suffixes[i].index;
-    this->suffixes[i].index = -1;
-  }
-
-  // Accurate/final LMS sort
-  getBuckets(summary, size, alphabet, buckets, true);
-  for (int i = newSize; i > 1; i--) {
-    int stringIndex = offsets[summarySuffix[i]];
-    int bucketIndex = this->get(stringIndex, summary);
-    this->suffixes[buckets[bucketIndex]--].index = stringIndex;
-    //this->show();
-  }
-  this->suffixes[0].index = size;
-  //this->show();
-
-  // Sort non-LMS strings
-  induceSortL(summary, size, alphabet, buckets, types);
-  induceSortS(summary, size, alphabet, buckets, types);
-
-  free(summaryString);
-  free(offsets);
-  free(buckets);
-  free(types);
-}
-
-void SuffixArray::getBuckets(int* summary, int size, int alphabet, int* buckets, bool tails) {
-  for (int i = 0; i < alphabet; i++) {
-    buckets[i] = 0;
-  }
-  for (int i = 0; i < size; i++) {
-    buckets[this->get(i, summary)] += 1;
-  }
-  int sum = 1;
-  for (int i = 0; i < alphabet; i++) {
-    sum += buckets[i];
-    buckets[i] = tails ? sum - 1 : sum - buckets[i];
-  }
-}
-
-void SuffixArray::induceSortL(int* summary, int size, int alphabet, int* buckets, bool* types) {
-  getBuckets(summary, size, alphabet, buckets, false);
-  for (int i = 0; i < size; i++) {
-    int j = this->suffixes[i].index - 1;
-    if (j >= 0 && !types[j]) {
-      int bucketIndex = this->get(j, summary);
-      this->suffixes[buckets[bucketIndex]].index = j;
-      buckets[bucketIndex] += 1;
-      //this->show(i);
-    }
-  }
-}
-
-void SuffixArray::induceSortS(int* summary, int size, int alphabet, int* buckets, bool* types) {
-  getBuckets(summary, size, alphabet, buckets, true);
-  for (int i = size; i >= 0; i--) {
-    int j = this->suffixes[i].index - 1;
-    if (j >= 0 && types[j]) {
-      int bucketIndex = this->get(j, summary);
-      this->suffixes[buckets[bucketIndex]--].index = j;
-      //this->show(i);
-    }
-  }
+  return std::pair<int, int>{len, this->window->getDictSize() - best.getIndex()};
 }
 
 std::pair<int, int> SuffixArray::getMatch() {
@@ -357,18 +321,14 @@ void SuffixArray::print() const {
 }
 
 void SuffixArray::show(int pos) const {
-  for (Suffix s : this->suffixes) {
-    std::cout << std::setfill('0') << std::setw(2) << s.index << " ";
+  for (int i = 0; i <= this->window->getDictSize(); i++) {
+    std::cout << std::setfill('0') << std::setw(2) << suffixes[i].index << " ";
   }
   std::cout << std::endl;
   if (pos >= 0) {
-    for (int i = 0; i < this->suffixes.size(); i++) {
+    for (int i = 0; i <= this->window->getDictSize(); i++) {
       std::cout << (i == pos ? "^^" : "  ") << " ";
     }
     std::cout << std::endl;
   }
-}
-
-SuffixArray::~SuffixArray() {
-  free(this->lcp_lr);
 }
