@@ -1,6 +1,6 @@
 #include "file.h"
 #include <iostream>
-#include <bitset>
+#include <stdexcept>
 
 File::File(std::string path) {
   this->isOpen = false;

@@ -1,16 +1,16 @@
-
-#include "window.h"
 #include "file.h"
-#include "suffix_array.h"
+#include "window.h"
 #include "bit_stream.h"
+#include "suffix_array.h"
 
-//#include <io.h>
-//#include <fcntl.h>
+// DELETE THIS BEFORE SUBMISSION
+#ifdef _WIN32
+#include <io.h>
+#include <fcntl.h>
+#endif
+
 #include <iostream>
 #include <string>
-#include <tuple>
-#include <cmath>
-#include <bitset>
 
 bool parseArguments(int argc, char**argv, int* N, int* L, int* S, std::string* path) {
   if (argc > 5) {
@@ -59,34 +59,48 @@ bool parseArguments(int argc, char**argv, int* N, int* L, int* S, std::string* p
         *S = number;
       }
       else {
-        std::cerr << "Unrecognized argument: " << arg.substr(0,3) << std::endl;
+        std::cerr << "Unrecognized argument: " << arg.substr(0, 3) << std::endl;
         return false;
       }
     }
   }
-
+  return true;
 }
 
-// TODO: The filename should be a command-line arg, as well as the parameters
+void printTriple(std::vector<char>& triple) {
+  std::cout << "(0," << triple.size() << ",";
+  for (char& c : triple) {
+    std::cout << c;
+  }
+  std::cout << ")" << std::endl;
+}
+
+void printDouble(std::pair<int, int>& token) {
+  std::cout << "(" << token.first << "," << token.second << ")" << std::endl;
+}
+
 int main(int argc, char** argv) {
- // _setmode(_fileno(stdout), _O_BINARY);
+#ifdef _WIN32
+  _setmode(_fileno(stdout), _O_BINARY);
+#endif
+
   // default values
   int N = 11;
   int L = 4;
   int S = 3;
   std::string path = "";
-  // update args
+
   if (!parseArguments(argc, argv, &N, &L, &S, &path)) {
-    return 0;
+    return 1;
   }
   if (path == "") {
     std::cerr << "No file path set." << std::endl;
-    return 0;
+    return 1;
   }
 
-  int windowSize = pow(2, N);
-  int labSize = pow(2, L);
-  int maxTripleLength = pow(2, S) - 1;
+  int windowSize = 2 << (N - 1);
+  int labSize = 2 << (L - 1);
+  int maxTripleLength = (2 << (S - 1)) - 1;
 
   File* file = nullptr;
   try {
@@ -94,53 +108,55 @@ int main(int argc, char** argv) {
   }
   catch (const std::exception& e) {
     std::cerr << e.what() << std::endl;
-    return 0;
+    return 1;
   }
-  std::string init_string;
-  int index = 0;
 
-  while (index < labSize + 1 && file->hasNextChar()) {
-    init_string += file->readChar();
-    index++;
+  std::string initString;
+  initString.reserve(labSize + 1);
+
+  while (initString.length() < labSize + 1 && file->hasNextChar()) {
+    initString += file->readChar();
   }
 
   BitStreamWriter writer = BitStreamWriter(N, L, S);
   std::cout << writer.writeHeader();
 
-  Window window = Window(windowSize, labSize, init_string.c_str(), index);
+  Window window = Window(windowSize, labSize, initString.c_str(), initString.length());
   SuffixArray sa(&window);
 
-  std::pair<int, std::vector<char>> triple = { 1, {window.getFromDict(0)} };
+  std::vector<char> triple = { window.getFromDict(0) };
+  triple.reserve(maxTripleLength);
+
   bool lastTriple = true;
   while (window.getLabSize() > 0) {
-    if (lastTriple && triple.first == maxTripleLength) {
-      writer.writeTriple(triple.first, triple.second);
+    if (lastTriple && triple.size() == maxTripleLength) {
+      writer.writeTriple(triple.size(), triple);
+      //printTriple(triple);
       lastTriple = false;
     }
 
     std::pair<int, int> result = sa.getMatchBS();
     if (result.first < 2) {
-      if (lastTriple) {
-        triple.first += 1;
-        triple.second.push_back(window.getFromLab(0));
-      } else {
-        triple = { 1, {window.getFromLab(0)} };
+      if (!lastTriple) {
+        triple.clear();
         lastTriple = true;
       }
+      triple.push_back(window.getFromLab(0));
       if (file->hasNextChar()) {
-        index++;
-        unsigned char c = file->readChar();
-        window.add(c);
+        window.add(file->readChar());
       }
       else {
         window.shift(1);
       }
-    } else {
+    }
+    else {
       if (lastTriple) {
-        writer.writeTriple(triple.first, triple.second);
+        writer.writeTriple(triple.size(), triple);
+        //printTriple(triple);
         lastTriple = false;
       }
       writer.writeDouble(result.first, result.second);
+      //printDouble(result);
       int len = result.first;
       while (len > 0 && file->hasNextChar()) {
         unsigned char c = file->readChar();
@@ -152,9 +168,11 @@ int main(int argc, char** argv) {
     sa.rebuild();
   }
   if (lastTriple) {
-    writer.writeTriple(triple.first, triple.second);
+    writer.writeTriple(triple.size(), triple);
+    //printTriple(triple);
   }
   writer.writeEOF();
   file->close();
-  return 1;
+  //system("PAUSE");
+  return 0;
 }

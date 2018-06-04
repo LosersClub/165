@@ -146,9 +146,9 @@ void BitStreamReader::readHeader(const unsigned char& header) {
 }
 
 unsigned int BitStreamReader::getN() {
-  return 2 << this->nMask->size - 1;
+  return 2 << (this->nMask->size - 1);
 }
 
 unsigned int BitStreamReader::getS() {
-  return 2 << this->sMask->size - 1;
+  return (2 << (this->sMask->size - 1));
 }
