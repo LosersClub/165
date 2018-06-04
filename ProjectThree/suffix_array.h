@@ -20,6 +20,7 @@ class SuffixArray {
   public:
     SuffixArray(const Window* window);
     std::pair<int, int> getMatch();
+    std::pair<int, int> getMatchBS();
 
     void moveM_end(int* oldMiddle, int* lcpIndex, int* left, int* right);
     void moveM_M(int* oldMiddle, int* lcpIndex, int* left, int* right);

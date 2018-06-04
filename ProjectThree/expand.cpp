@@ -10,7 +10,7 @@
 
 int main(int argc, char** argv) {
   std::istream* stream = &std::cin;
-  File* file = nullptr; 
+  File* file = nullptr;
   if (argc > 2) {
     std::cerr << "One parameter allowed: path to file to be decompressed." << std::endl;
     return 0;
@@ -39,14 +39,14 @@ int main(int argc, char** argv) {
     return 0;
   }
 
-
   Window window = Window(reader.getN());
 
   while (stream->peek() != EOF) {
     byte = stream->get();
+
     BitStream::Type type = reader.read(byte);
     while (type == BitStream::Type::None) {
-      type = reader.read(stream->get());
+      type = reader.read(byte = stream->get());
     }
     if (type == BitStream::Type::Double) {
       std::pair<int, int> info = reader.getDouble();
@@ -71,6 +71,5 @@ int main(int argc, char** argv) {
   if (file != nullptr) {
     file->close();
   }
-   
   return 1;
 }

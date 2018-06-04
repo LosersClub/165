@@ -13,7 +13,7 @@ File::File(std::string path) {
 
 void File::open() {
   if (!this->isOpen) {
-    this->stream.open(this->path.c_str(), std::fstream::in);
+    this->stream.open(this->path.c_str(), std::fstream::in | std::fstream::binary);
     if (!this->stream.is_open()) {
       throw std::invalid_argument("File path not found: " + this->path);
     }
@@ -31,9 +31,6 @@ bool File::isFileOpen() const {
 }
 
 char File::readChar() {
-  if (!this->isOpen) {
-    throw std::logic_error("The file is not open and cannot be read.");
-  }
   return (char)(this->stream.get());
 }
 

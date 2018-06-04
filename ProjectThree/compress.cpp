@@ -3,6 +3,9 @@
 #include "file.h"
 #include "suffix_array.h"
 #include "bit_stream.h"
+
+//#include <io.h>
+//#include <fcntl.h>
 #include <iostream>
 #include <string>
 #include <tuple>
@@ -66,6 +69,7 @@ bool parseArguments(int argc, char**argv, int* N, int* L, int* S, std::string* p
 
 // TODO: The filename should be a command-line arg, as well as the parameters
 int main(int argc, char** argv) {
+ // _setmode(_fileno(stdout), _O_BINARY);
   // default values
   int N = 11;
   int L = 4;
@@ -108,28 +112,27 @@ int main(int argc, char** argv) {
 
   std::pair<int, std::vector<char>> triple = { 1, {window.getFromDict(0)} };
   bool lastTriple = true;
-
   while (window.getLabSize() > 0) {
-    // Check if we've reached S capacity; if so, output the triple
     if (lastTriple && triple.first == maxTripleLength) {
       writer.writeTriple(triple.first, triple.second);
       lastTriple = false;
     }
 
-    std::pair<int, int> result = sa.getMatchBinarySearch();
+    std::pair<int, int> result = sa.getMatchBS();
     if (result.first < 2) {
       if (lastTriple) {
         triple.first += 1;
         triple.second.push_back(window.getFromLab(0));
-      }
-      else {
+      } else {
         triple = { 1, {window.getFromLab(0)} };
         lastTriple = true;
       }
       if (file->hasNextChar()) {
         index++;
-        window.add(file->readChar());
-      } else {
+        unsigned char c = file->readChar();
+        window.add(c);
+      }
+      else {
         window.shift(1);
       }
     } else {
@@ -138,17 +141,13 @@ int main(int argc, char** argv) {
         lastTriple = false;
       }
       writer.writeDouble(result.first, result.second);
-      if (file->hasNextChar()) {
-        int i = 0;
-        for (i = 0; i < result.first && file->hasNextChar(); i++) {
-          window.add(file->readChar());
-        }
-        if (!file->hasNextChar()) {
-          window.shift(result.first - i);
-        }
-      } else {
-        window.shift(result.first);
+      int len = result.first;
+      while (len > 0 && file->hasNextChar()) {
+        unsigned char c = file->readChar();
+        window.add(c);
+        len--;
       }
+      window.shift(len);
     }
     sa.rebuild();
   }

@@ -9,8 +9,8 @@ SuffixArray::SuffixArray(const Window* window) : window(window) {
     this->suffixes.push_back(Suffix(this->window, -1));
   }
 
-  this->lcp_lr = new int[10000];
-  memset(this->lcp_lr, 10000, 10000);
+  this->lcp_lr = new int[100000];
+  memset(this->lcp_lr, 10000, 100000);
 
   rebuild();
 }
@@ -265,6 +265,40 @@ std::pair<int, int> SuffixArray::getMatchBinarySearch() {
   }
   return std::pair<int, int>{len, this->window->getDictSize() - best.getIndex()};
 }
+
+std::pair<int, int> SuffixArray::getMatchBS() {
+  Suffix out = this->suffixes[0];
+  int len = 0;
+  int left = 1, right = this->window->getDictSize();
+  while (left <= right) {
+    int mid = (left + right) / 2;
+    Suffix middle = this->suffixes[mid];
+
+    int k = 0;
+    while (k < this->window->getLabSize() &&
+      this->window->getFromLab(k) == middle[k % middle.length()]) {
+      ++k;
+    }
+    if (k > len) {
+      out = middle;
+      len = k;
+    }
+
+    if (left == right || len == this->window->getLabSize()) {
+      break;
+    }
+
+    if (k == middle.length() || this->window->getFromLab(k) > middle[k % middle.length()]) {
+      left = mid + 1;
+    }
+    else {
+      right = mid;
+    }
+
+  }
+  return { len, this->window->getDictSize() - out.index };
+}
+
 
 std::pair<int, int> SuffixArray::getMatch() {
   int offset = 0;

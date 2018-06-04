@@ -2,6 +2,7 @@
 
 #include <bitset>
 #include <iostream>
+#include <cstdio>
 
 BitStreamWriter::BitStreamWriter(unsigned char n, unsigned char l, unsigned char s)
   : buffer(0), pos(8), nMask({n}), lMask({l}), sMask({s}) { }
@@ -18,7 +19,7 @@ BitStreamReader::~BitStreamReader() {
 }
 
 void BitStreamWriter::reset() {
-  std::cout << this->buffer;
+  std::putchar(this->buffer);
   this->pos = 8;
   this->buffer = 0x0;
 }
