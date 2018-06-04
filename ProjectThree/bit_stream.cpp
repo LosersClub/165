@@ -18,14 +18,14 @@ BitStreamReader::~BitStreamReader() {
 }
 
 void BitStreamWriter::reset() {
-  std::cout << std::bitset<8>(this->buffer) << std::endl;
+  std::cout << this->buffer;
   this->pos = 8;
   this->buffer = 0x0;
 }
 
 void BitStreamWriter::writeDouble(int len, int offset) {
-  this->write(len, this->lMask);
-  this->write(offset, this->nMask);
+  this->write(len - 1, this->lMask);
+  this->write(offset - 1, this->nMask);
 }
 
 void BitStreamWriter::writeTriple(int size, std::vector<char> bytes) {
@@ -39,6 +39,9 @@ void BitStreamWriter::writeTriple(int size, std::vector<char> bytes) {
 void BitStreamWriter::writeEOF() {
   this->write(0x00, this->lMask);
   this->write(0x00, this->sMask);
+  if (this->pos != 8) {
+    this->reset();
+  }
 }
 
 void BitStreamWriter::write(int value, Mask mask) {
@@ -82,7 +85,6 @@ BitStream::Type BitStreamReader::read(unsigned char input) {
       sizeSet = true;
     }
     if (size == 0) {
-      std::cout << "EOF" << std::endl;
       return Type::End;
     }
     while (size > 0) {
@@ -93,11 +95,6 @@ BitStream::Type BitStreamReader::read(unsigned char input) {
       bytes.push_back(temp);
       size -= 1;
     }
-    std::cout << "(0," << bytes.size() << ",";
-    for (char& byte : bytes) {
-      std::cout << byte;
-    }
-    std::cout << ")" << std::endl;
     lengthSet = false;
     sizeSet = false;
     backup = bytes;
@@ -110,7 +107,7 @@ BitStream::Type BitStreamReader::read(unsigned char input) {
   if (!flag) {
     return Type::None;
   }
-  std::cout << "(" << this->length << "," << offset << ")" << std::endl;
+  this->length++, this->offset++;
   lengthSet = false;
   this->pos += 8;
   return Type::Double; 
@@ -118,7 +115,6 @@ BitStream::Type BitStreamReader::read(unsigned char input) {
 
 short BitStreamReader::read(unsigned int& buffer, Mask mask, bool& flag) {
   if (mask.size > this->pos) {
-    // Unable to read given current buffer
     this->pos += 8;
     flag = false;
     return -1;
@@ -146,5 +142,12 @@ void BitStreamReader::readHeader(const unsigned char& header) {
   this->nMask = new Mask(((header & (0x7 << 5)) >> 5) + 9);
   this->lMask = new Mask(((header & (0x1 << 4)) >> 4) + 3);
   this->sMask = new Mask(((header & (0x7 << 1)) >> 1) + 1);
-  std::cout << std::dec << +nMask->size << " " << +lMask->size << " " << +sMask->size << std::endl;
+}
+
+unsigned int BitStreamReader::getN() {
+  return 2 << this->nMask->size - 1;
+}
+
+unsigned int BitStreamReader::getS() {
+  return 2 << this->sMask->size - 1;
 }

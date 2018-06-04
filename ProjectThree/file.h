@@ -4,7 +4,6 @@
 
 class File {
   private:
-    std::fstream stream;
     std::string path;
     bool isOpen;
 
@@ -14,5 +13,7 @@ class File {
     void close();
     char readChar();
     bool isFileOpen() const;
+    std::fstream stream;
     std::string getPath() const;
+    bool hasNextChar();
 };

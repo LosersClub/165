@@ -41,6 +41,10 @@ class BitStreamReader : public BitStream {
 
     std::pair<int, int> getDouble();
     std::pair<int, std::vector<char>> getTriple();
+
+    unsigned int getN();
+    unsigned int getS();
+
   private:
     Mask *nMask, *lMask, *sMask;
     unsigned short overflow = 0x00;
