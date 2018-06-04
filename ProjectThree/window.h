@@ -31,5 +31,7 @@ class Window {
     const char& getFromDict(int index) const;
     const char& getFromLab(int index) const;
     void print();
+    char* getNextInDict(char* c);
+    bool atEndOfDict(char* c);
     ~Window();
 };

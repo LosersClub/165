@@ -161,6 +161,27 @@ void Window::print() {
   std::cout << std::endl;
 }
 
+char* Window::getNextInDict(char* c) {
+  char* temp = c;
+  if (temp++ > this->array + this->windowSize) {
+    temp = this->array;
+  }
+  if ((this->head < this->split &&
+        (temp >= (this->array + this->head) && temp < (this->array + this->split))) ||
+    (this->head > this->split &&
+        (temp >= (this->array + this->head) || temp < (this->array + this->split)))) {
+    return temp;
+  }
+  return nullptr;
+}
+
+bool Window::atEndOfDict(char* c) {
+  if (this->array + this->split == this->array) {
+    return c == this->array + this->windowSize;
+  }
+  return c == this->array + this->split - 1;
+}
+
 Window::~Window() {
   delete array;
 }
