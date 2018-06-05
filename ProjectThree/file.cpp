@@ -1,4 +1,6 @@
 #include "file.h"
+
+#include <sys/stat.h>
 #include <iostream>
 #include <stdexcept>
 
@@ -21,6 +23,12 @@ void File::open() {
   }
 }
 
+int File::size() {
+  struct stat stats;
+  stat(this->path.c_str(), &stats);
+  return stats.st_size;
+}
+
 void File::close() {
   this->stream.close();
   this->isOpen = false;
@@ -32,10 +40,6 @@ bool File::isFileOpen() const {
 
 char File::readChar() {
   return (char)(this->stream.get());
-}
-
-std::string File::getPath() const {
-  return this->path;
 }
 
 bool File::hasNextChar() {

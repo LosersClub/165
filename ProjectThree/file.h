@@ -13,7 +13,9 @@ class File {
     void close();
     char readChar();
     bool isFileOpen() const;
+    int size();
+
+
     std::fstream stream;
-    std::string getPath() const;
     bool hasNextChar();
 };

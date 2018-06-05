@@ -5,7 +5,7 @@
 #include <cstdio>
 
 BitStreamWriter::BitStreamWriter(unsigned char n, unsigned char l, unsigned char s)
-  : buffer(0), pos(8), nMask({n}), lMask({l}), sMask({s}) { }
+  : buffer(0), pos(8), nMask({n}), lMask({l}), sMask({s}), byteCount(0) { }
 
 BitStreamReader::BitStreamReader(unsigned char header)
   : nMask(nullptr), lMask(nullptr), sMask(nullptr) {
@@ -20,8 +20,13 @@ BitStreamReader::~BitStreamReader() {
 
 void BitStreamWriter::reset() {
   std::putchar(this->buffer);
+  this->byteCount++;
   this->pos = 8;
   this->buffer = 0x0;
+}
+
+long BitStreamWriter::size() {
+  return this->byteCount;
 }
 
 void BitStreamWriter::writeDouble(int len, int offset) {
@@ -136,6 +141,7 @@ unsigned char BitStreamWriter::writeHeader() {
   int n = nMask.size - 9;
   int l = lMask.size - 3;
   int s = sMask.size - 1;
+  this->byteCount += 1;
   return ((n & 0x7) << 5) | ((l & 0x1) << 4) | ((s & 0x7) << 1);
 }
 
@@ -145,10 +151,22 @@ void BitStreamReader::readHeader(const unsigned char& header) {
   this->sMask = new Mask(((header & (0x7 << 1)) >> 1) + 1);
 }
 
-unsigned int BitStreamReader::getN() {
+unsigned int BitStreamReader::getMaxN() {
   return 2 << (this->nMask->size - 1);
 }
 
-unsigned int BitStreamReader::getS() {
+unsigned int BitStreamReader::getMaxS() {
   return (2 << (this->sMask->size - 1));
+}
+
+int BitStreamReader::getN() {
+  return this->nMask->size;
+}
+
+int BitStreamReader::getL() {
+  return this->lMask->size;
+}
+
+int BitStreamReader::getS() {
+  return this->sMask->size;
 }

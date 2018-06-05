@@ -23,10 +23,12 @@ class BitStreamWriter : public BitStream {
     void writeTriple(int size, std::vector<char> bytes);
     void writeEOF();
     void reset();
+    long size();
   private:
     Mask nMask, lMask, sMask;
     unsigned char buffer;
     unsigned char pos;
+    long byteCount;
 
     void write(int value, Mask mask);
 };
@@ -42,8 +44,12 @@ class BitStreamReader : public BitStream {
     std::pair<int, int> getDouble();
     std::pair<int, std::vector<char>> getTriple();
 
-    unsigned int getN();
-    unsigned int getS();
+    unsigned int getMaxN();
+    unsigned int getMaxS();
+
+    int getN();
+    int getL();
+    int getS();
 
   private:
     Mask *nMask, *lMask, *sMask;
