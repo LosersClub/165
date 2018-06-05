@@ -1,11 +1,7 @@
 #include "hash_encoder.h"
 
-HashEncoder::HashEncoder(Window* window) : window(window), maxMatch(false) {
-  if (this->window->getLabSize() > 0) {
-    char* dictEnd = this->window->getFromDictPtr(0);
-    int key = hash(dictEnd);
-    this->map[key].push_back(dictEnd);
-  }
+HashEncoder::HashEncoder(Window* window) : window(window), maxMatch(true) {
+  this->repair();
 }
 
 std::pair<int, int> HashEncoder::getMatch() {
@@ -16,10 +12,10 @@ std::pair<int, int> HashEncoder::getMatch() {
     return std::pair<int, int>{0, 0};
   }
 
-  int key = hash(this->window->getFromLabPtr(0));
+  int key = hash(this->window->getFromLab(0));
   // The bucket is empty, no match
   if (this->map[key].empty()) {
-    modifyTable(this->window->getFromLabPtr(0), 1);
+    modifyTable(this->window->getFromLab(0), 1);
     return std::pair<int, int>{0, 0};
   }
 
@@ -32,12 +28,12 @@ std::pair<int, int> HashEncoder::getMatch() {
 
     // Compare the current string to the LAB
     while (matchLen < this->window->getLabSize()) {
-      if (*temp != this->window->getFromLab(matchLen)) {
+      if (*temp != *this->window->getFromLab(matchLen)) {
         break;
       }
       ++matchLen;
       // Move to the next character in the char sequence
-      temp = this->window->atEndOfDict(temp) ? bucketEntry : this->window->getNextInDict(temp);
+      temp = this->window->atEndOfDict(temp) ? bucketEntry : this->window->getNext(temp);
     }
 
     // We've found a better match, so update our trackers
@@ -50,12 +46,12 @@ std::pair<int, int> HashEncoder::getMatch() {
     }
   }
 
-  modifyTable(this->window->getFromLabPtr(0), bestMatchLen > 0 ? bestMatchLen : 1);
+  modifyTable(this->window->getFromLab(0), bestMatchLen > 0 ? bestMatchLen : 1);
   return std::pair<int, int> {bestMatchLen, this->window->getOffset(bestMatch)};
 }
 
 void HashEncoder::modifyTable(char* string, int len) {
-  this->removeString(this->window->getFromDictPtr(0), len > 0 ? len : 1);
+  this->removeString(this->window->getFromDict(0), len > 0 ? len : 1);
   this->addString(string, len);
 }
 
@@ -69,32 +65,27 @@ int HashEncoder::hash(char* string) {
 }
 
 void HashEncoder::addString(char* string, int size) {
-  char* temp = string;
   if (size == this->window->getLabSize()) {
     this->maxMatch = true;
     size--;
   }
-  for (int i = 0; i < size; i++, temp = this->window->getNext(temp)) {
-    int key = hash(temp);
-    this->map[key].push_back(temp);
+  for (int i = 0; i < size; i++, string = this->window->getNext(string)) {
+    this->map[hash(string)].push_back(string);
   }
 }
 
 void HashEncoder::removeString(char* string, int size) {
-  char* temp = string;
   while (this->window->getDictSize() + size > this->window->getDictCap()) {
-    int key = hash(temp);
-    this->map[key].remove(temp);
-    temp = this->window->getNextInDict(temp);
+    this->map[hash(string)].remove(string);
+    string = this->window->getNext(string);
     size--;
   }
 }
 
 void HashEncoder::repair() {
   if (this->maxMatch && this->window->getLabSize() > 0) {
-    char* dictEnd = this->window->getFromDictPtr(this->window->getDictSize() - 1);
-    int key = hash(dictEnd);
-    this->map[key].push_back(dictEnd);
+    char* dictEnd = this->window->getFromDict(this->window->getDictSize() - 1);
+    this->map[hash(dictEnd)].push_back(dictEnd);
   }
   this->maxMatch = false;
 }

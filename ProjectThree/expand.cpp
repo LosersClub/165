@@ -71,7 +71,7 @@ int main(int argc, char** argv) {
   Window window = Window(reader.getMaxN());
 
   long uncompressedSize = 0;
-  long compressedSize = 1;
+  long compressedSize = 3;
   bool done = false;
   while (!done && stream->good()) {
     compressedSize++;
@@ -80,21 +80,21 @@ int main(int argc, char** argv) {
       std::vector<char> triple = reader.getTriple();
       for (char& c : reader.getTriple()) {
         std::cout << c;
-        uncompressedSize++;
         window.addNoLab(c);
       }
+      uncompressedSize += triple.size();
       break;
     }
     case BitStream::Double: {
       std::pair<int, int> info = reader.getDouble();
       int dictIndex = window.getDictSize() - info.second;
-      char* c = window.getFromDictPtr(dictIndex);
+      char* c = window.getFromDict(dictIndex);
       for (int i = 0; i < info.first; i++) {
         std::cout << *c;
-        uncompressedSize++;
         window.addNoLab(*c);
         c = window.getNext(c);
       }
+      uncompressedSize += info.first;
       break;
     }
     case BitStream::None:

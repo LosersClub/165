@@ -128,10 +128,10 @@ int main(int argc, char** argv) {
   writer.writeHeader();
 
   std::chrono::high_resolution_clock::time_point startTime = std::chrono::high_resolution_clock::now();
-  Window window = Window(windowSize, labSize, initString.c_str(), initString.length());
+  Window window = Window(windowSize, labSize, initString);
   HashEncoder hasher(&window);
 
-  std::vector<char> triple = { window.getFromDict(0) };
+  std::vector<char> triple = { *window.getFromDict(0) };
   triple.reserve(maxTripleLength);
 
   long tokenCount = 0;
@@ -149,7 +149,7 @@ int main(int argc, char** argv) {
         triple.clear();
         lastTriple = true;
       }
-      triple.push_back(window.getFromLab(0));
+      triple.push_back(*window.getFromLab(0));
       if (file->hasNextChar()) {
         window.add(file->readChar());
       }
