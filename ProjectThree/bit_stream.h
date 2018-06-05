@@ -18,7 +18,7 @@ class BitStream {
 class BitStreamWriter : public BitStream {
   public:
     BitStreamWriter(unsigned char n, unsigned char l, unsigned char s);
-    unsigned char writeHeader();
+    void writeHeader();
     void writeDouble(int len, int offset);
     void writeTriple(int size, std::vector<char> bytes);
     void writeEOF();
@@ -35,10 +35,10 @@ class BitStreamWriter : public BitStream {
 
 class BitStreamReader : public BitStream {
   public:
-    BitStreamReader(unsigned char header);
+    BitStreamReader(unsigned char header[3]);
     ~BitStreamReader();
 
-    void readHeader(const unsigned char& header);
+    void readHeader(const unsigned char header[3]);
     Type read(unsigned char input);
 
     std::pair<int, int> getDouble();

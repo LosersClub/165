@@ -12,6 +12,7 @@
 #include <iostream>
 #include <string>
 #include <chrono>
+#include <sstream>
 
 bool parseArguments(int argc, char**argv, int* N, int* L, int* S, std::string* path) {
   if (argc > 5) {
@@ -113,11 +114,7 @@ int main(int argc, char** argv) {
     std::cerr << e.what() << std::endl;
     return 1;
   }
-
   long originalSize = file->size();
-  std::cerr << "LZ INFO" << std::endl;
-  std::cerr << "N: " << N << ", L: " << L << ", S: " << S << std::endl;
-  std::cerr << "Input Size: " << originalSize << " bytes" << std::endl;
 
   std::string initString;
   initString.reserve(labSize + 1);
@@ -126,9 +123,9 @@ int main(int argc, char** argv) {
     initString += file->readChar();
   }
 
-
+  std::cerr << "LZ START" << std::endl;
   BitStreamWriter writer = BitStreamWriter(N, L, S);
-  std::cout << writer.writeHeader();
+  writer.writeHeader();
 
   std::chrono::high_resolution_clock::time_point startTime = std::chrono::high_resolution_clock::now();
   Window window = Window(windowSize, labSize, initString.c_str(), initString.length());
@@ -188,26 +185,31 @@ int main(int argc, char** argv) {
 
   // Info Output
   long compressedSize = writer.size();
-  std::cerr << "Compressed Size: " << writer.size() << " bytes" << std::endl;
+  std::stringstream infoStream;
+  infoStream << std::endl << "LZ INFO" << std::endl;
+  infoStream << "N: " << N << ", L: " << L << ", S: " << S << std::endl;
+  infoStream << "Input Size: " << originalSize << " bytes" << std::endl;
+  infoStream << "Compressed Size: " << writer.size() << " bytes" << std::endl;
 
   float spaceSavings = (1 - (float)compressedSize / originalSize)*100;
-  std::cerr << "Space Savings: " << std::fixed << std::setprecision(2) << spaceSavings << "%" << std::endl;
+  infoStream << "Space Savings: " << std::fixed << std::setprecision(2) << spaceSavings << "%" << std::endl;
 
   auto runTime = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
   long totalTimeS = runTime / 1000.0;
-  std::cerr << "Total Time: ";
+  infoStream << "Total Time: ";
   if (totalTimeS > 0) {
-    std::cerr << totalTimeS << "s ";
+    infoStream << totalTimeS << "s ";
   }
-  std::cerr << std::setprecision(0) << runTime - totalTimeS * 1000.0 << "ms" << std::endl;
+  infoStream << std::setprecision(0) << runTime - totalTimeS * 1000.0 << "ms" << std::endl;
 
   auto avgTime = std::chrono::duration_cast<std::chrono::nanoseconds>(endTime - startTime).count() / tokenCount;
   auto micro = avgTime / 1000.0;
-  std::cerr << "Average time per byte: ";
+  infoStream << "Average time per token: ";
   if (micro >= 1) {
-    std::cerr << std::fixed << std::setprecision(2) << micro << " microseconds" << std::endl;
+    infoStream << std::fixed << std::setprecision(2) << micro << " microseconds" << std::endl;
   } else {
-    std::cerr << avgTime << " nanoseconds" << std::endl;
+    infoStream << avgTime << " nanoseconds" << std::endl;
   }
+  std::cerr << infoStream.str();
   return 0;
 }

@@ -10,6 +10,7 @@
 #include <iomanip>
 #include <iostream>
 #include <chrono>
+#include <sstream>
 
 // DELETE
 void printTriple(std::vector<char>& triple) {
@@ -49,23 +50,23 @@ int main(int argc, char** argv) {
     }
   }
 
-  unsigned char byte = stream->get();
-
-  if (stream->eof()) {
-    std::cerr << "No input received." << std::endl;
-    return 1;
+  unsigned char header[3];
+  for (int i = 0; i < 3; i++) {
+    header[i] = stream->get();
+    if (stream->eof()) {
+      std::cerr << "No input received." << std::endl;
+      return 1;
+    }
   }
-  BitStreamReader reader = BitStreamReader(byte);
+  BitStreamReader reader = BitStreamReader(header);
 
-  if (reader.getMaxN() < 512 || reader.getMaxN() > 16384 ||
-    reader.getMaxS() - 1 < 1 || reader.getMaxS() - 1 > 31) {
+  if (reader.getN() < 9 || reader.getN() > 14 || reader.getS() < 1 || reader.getS() > 5 ||
+    reader.getL() < 3 || reader.getL() > 4) {
     std::cerr << "Read arguments out of range: invalid input file." << std::endl;
     return 1;
   }
 
-  std::cerr << "EXPAND INFO" << std::endl;
-  std::cerr << "N: " << reader.getN() << ", L: " << reader.getL() << ", S: " << reader.getS() << std::endl;
-
+  std::cerr << "EXPAND START" << std::endl;
   std::chrono::high_resolution_clock::time_point startTime = std::chrono::high_resolution_clock::now();
   Window window = Window(reader.getMaxN());
 
@@ -109,27 +110,31 @@ int main(int argc, char** argv) {
   }
 
   // Info Output
-  std::cerr << "Input Size: " << compressedSize << " bytes" << std::endl;
-  std::cerr << "Output Size: " << uncompressedSize << " bytes" << std::endl;
+  std::stringstream infoStream;
+  infoStream << std::endl << "EXPAND INFO" << std::endl;
+  infoStream << "N: " << reader.getN() << ", L: " << reader.getL() << ", S: " << reader.getS() << std::endl;
+  infoStream << "Input Size: " << compressedSize << " bytes" << std::endl;
+  infoStream << "Output Size: " << uncompressedSize << " bytes" << std::endl;
 
   float spaceSavings = (1 - (float)compressedSize / uncompressedSize) * 100;
-  std::cerr << "Space Savings: " << std::fixed << std::setprecision(2) << spaceSavings << "%" << std::endl;
+  infoStream << "Space Savings: " << std::fixed << std::setprecision(2) << spaceSavings << "%" << std::endl;
   
   auto runTime = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
   long totalTimeS = runTime / 1000.0;
-  std::cerr << "Total Time: ";
+  infoStream << "Total Time: ";
   if (totalTimeS > 0) {
-    std::cerr << totalTimeS << "s ";
+    infoStream << totalTimeS << "s ";
   }
-  std::cerr << std::setprecision(0) << runTime - totalTimeS * 1000.0 << "ms" << std::endl;
+  infoStream << std::setprecision(0) << runTime - totalTimeS * 1000.0 << "ms" << std::endl;
 
   auto avgTime = std::chrono::duration_cast<std::chrono::nanoseconds>(endTime - startTime).count() / uncompressedSize;
   auto micro = avgTime / 1000.0;
-  std::cerr << "Average time per byte: ";
+  infoStream << "Average time per byte: ";
   if (micro >= 1) {
-    std::cerr << std::fixed << std::setprecision(2) << micro << " microseconds" << std::endl;
+    infoStream << std::fixed << std::setprecision(2) << micro << " microseconds" << std::endl;
   } else {
-    std::cerr << avgTime << " nanoseconds" << std::endl;
+    infoStream << avgTime << " nanoseconds" << std::endl;
   }
+  std::cerr << infoStream.str();
   return 0;
 }
