@@ -2,6 +2,7 @@
 #include "window.h"
 #include "bit_stream.h"
 #include "suffix_array.h"
+#include "hash_encoder.h"
 
 // DELETE THIS BEFORE SUBMISSION
 #ifdef _WIN32
@@ -122,8 +123,8 @@ int main(int argc, char** argv) {
   std::cout << writer.writeHeader();
 
   Window window = Window(windowSize, labSize, initString.c_str(), initString.length());
-  SuffixArray sa(&window);
-
+  HashEncoder hasher(&window);
+  //SuffixArray sa(&window);
   std::vector<char> triple = { window.getFromDict(0) };
   triple.reserve(maxTripleLength);
 
@@ -134,8 +135,8 @@ int main(int argc, char** argv) {
       //printTriple(triple);
       lastTriple = false;
     }
-
-    std::pair<int, int> result = sa.getMatchBS();
+   // window.print();
+    std::pair<int, int> result = hasher.getMatch();
     if (result.first < 2) {
       if (!lastTriple) {
         triple.clear();
@@ -165,7 +166,9 @@ int main(int argc, char** argv) {
       }
       window.shift(len);
     }
-    sa.rebuild();
+    //sa.rebuild();
+    hasher.repair();
+    //window.print();
   }
   if (lastTriple) {
     writer.writeTriple(triple.size(), triple);

@@ -29,13 +29,15 @@ int main(int argc, char** argv) {
   if (argc == 2) {
     try {
       file = new File(argv[1]);
+      stream = &(file->stream);
     }
     catch (const std::exception& e) {
       std::cerr << e.what() << std::endl;
       return 1;
     }
-    stream = &(file->stream);
+    
   }
+
   unsigned char byte = stream->get();
 
   if (stream->eof()) {
@@ -57,21 +59,23 @@ int main(int argc, char** argv) {
     switch (reader.read(stream->get())) {
     case BitStream::Triple: {
       std::pair<int, std::vector<char>> triple = reader.getTriple();
-      printTriple(triple.second);
+      //printTriple(triple.second);
       for (char& c : reader.getTriple().second) {
-        //std::cout << c;
+        std::cout << c;
         window.addNoLab(c);
       }
       break;
     }
     case BitStream::Double: {
       std::pair<int, int> info = reader.getDouble();
-      printDouble(info);
+      //printDouble(info);
       int dictIndex = window.getDictSize() - info.second;
+      char* c = window.getFromDictPtr(dictIndex);
       for (int i = 0; i < info.first; i++) {
-        char c = window.getFromDict(dictIndex + i);
-        //std::cout << c;
-        window.addNoLab(c);
+        //char c = window.getFromDict(dictIndex + i);
+        std::cout << *c;
+        window.addNoLab(*c);
+        c = window.getNext(c);
       }
       break;
     }
@@ -82,6 +86,6 @@ int main(int argc, char** argv) {
       break;
     }
   }
-  system("PAUSE");
+  //system("PAUSE");
   return 0;
 }

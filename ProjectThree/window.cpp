@@ -93,6 +93,16 @@ const char& Window::getFromLab(int index) const {
   return this->array[index];
 }
 
+
+char* Window::getFromDictPtr(int index) {
+  index = (index + this->head) % this->windowCap;
+  return this->array + index;
+}
+char* Window::getFromLabPtr(int index) {
+  index = (index + this->split) % this->windowCap;
+  return this->array + index;
+}
+
 void Window::shift(int numSpots) {
   // safety check?
   if (labSize <= 0) {
@@ -141,29 +151,20 @@ void Window::addNoLab(char c) {
 }
 
 void Window::print() {
-  int count = 0;
-  int i = this->head;
-  do {
-    if (i == this->split) {
-      std::cout << "| ";
-    }
-    if ((i < this->head && i >= this->tail) || (this->head < this->tail && i > this->head && i >= this->tail)) {
-      std::cout << "- ";
-    }
-    else {
-      std::cout << this->array[i] << " ";
-    }
-    i++;
-    if (i == this->windowCap) {
-      i = 0;
-    }
-  } while (i != this->head);
+
+  for (int i = 0; i < this->getDictSize(); i++) {
+    std::cout << this->getFromDict(i) << " ";
+  }
+  std::cout << "| ";
+  for (int i = 0; i < this->getLabSize(); i++) {
+    std::cout << this->getFromLab(i) << " ";
+  }
   std::cout << std::endl;
 }
 
 char* Window::getNextInDict(char* c) {
   char* temp = c;
-  if (temp++ > this->array + this->windowSize) {
+  if (++temp >= this->array + this->windowSize) {
     temp = this->array;
   }
   if ((this->head < this->split &&
@@ -175,13 +176,36 @@ char* Window::getNextInDict(char* c) {
   return nullptr;
 }
 
+char* Window::getNext(char* c) {
+  char* temp = c;
+  if (++temp >= this->array + this->windowSize) {
+    temp = this->array;
+  }
+  return temp;
+}
+
 bool Window::atEndOfDict(char* c) {
   if (this->array + this->split == this->array) {
-    return c == this->array + this->windowSize;
+    return c == this->array + this->windowSize - 1;
   }
   return c == this->array + this->split - 1;
 }
 
+int Window::getOffset(char* c) {
+  char* splitLoc = this->array + this->split;
+  if (splitLoc > c) {
+    return splitLoc - c;
+  }
+
+  else {
+    return ((this->array + this->windowSize) - c) + this->split + (head - tail);
+  }
+}
+
 Window::~Window() {
   delete array;
+}
+
+int Window::getLabCap() const {
+  return this->labCap;
 }

@@ -21,6 +21,7 @@ class Window {
     int getDictSize() const;
     int getLabSize() const;
     int getDictCap() const;
+    int getLabCap() const;
     void add(char c);
     void add(const char* c, int size);
     void addNoLab(char c);
@@ -30,8 +31,12 @@ class Window {
     int getTail() const;
     const char& getFromDict(int index) const;
     const char& getFromLab(int index) const;
+    char* getFromDictPtr(int index);
+    char* getFromLabPtr(int index);
     void print();
     char* getNextInDict(char* c);
     bool atEndOfDict(char* c);
+    char* getNext(char* c);
+    int getOffset(char* c);
     ~Window();
 };
