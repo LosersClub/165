@@ -10,9 +10,6 @@ HashEncoder::HashEncoder(Window* window) : window(window), maxMatch(false){
 }
 
 std::pair<int, int> HashEncoder::getMatch() {
-  if (this->window->getLabSize() < this->window->getLabCap()) {
-    int x = 4;
-  }
   if (this->window->getLabSize() < 2) {
     modifyTable(nullptr, 0);
     return std::pair<int, int>{0, 0};
@@ -86,12 +83,8 @@ void HashEncoder::addString(char* string, int size) {
     this->maxMatch = true;
     size--;
   }
-  int key = 0;
   for (int i = 0; i < size; i++, temp = this->window->getNext(temp)) {
-    if (this->window->getDictCap() == this->window->getDictSize()) {
-      int x = 4;
-    }
-    key = hash(temp);
+    int key = hash(temp);
     this->map[key].push_back(temp);
   }
 }

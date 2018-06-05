@@ -102,9 +102,9 @@ int main(int argc, char** argv) {
     return 1;
   }
 
-  int windowSize = 2 << (N - 1);
-  int labSize = 2 << (L - 1);
-  int maxTripleLength = (2 << (S - 1)) - 1;
+  size_t windowSize = 2 << (N - 1);
+  size_t labSize = 2 << (L - 1);
+  size_t maxTripleLength = (2 << (S - 1)) - 1;
 
   File* file = nullptr;
   try {

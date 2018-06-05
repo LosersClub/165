@@ -5,7 +5,7 @@
 #include <cstdio>
 
 BitStreamWriter::BitStreamWriter(unsigned char n, unsigned char l, unsigned char s)
-  : buffer(0), pos(8), nMask({n}), lMask({l}), sMask({s}), byteCount(0) { }
+  : nMask({n}), lMask({l}), sMask({s}), buffer(0), pos(8), byteCount(0) { }
 
 BitStreamReader::BitStreamReader(unsigned char header[3])
   : nMask(nullptr), lMask(nullptr), sMask(nullptr) {
