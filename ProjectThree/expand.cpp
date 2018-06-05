@@ -12,21 +12,6 @@
 #include <chrono>
 #include <sstream>
 
-// DELETE
-void printTriple(std::vector<char>& triple) {
-  std::cout << "(0," << triple.size() << ",";
-  for (char& c : triple) {
-    std::cout << c;
-  }
-  std::cout << ")" << std::endl;
-}
-
-// DELETE
-void printDouble(std::pair<int, int>& token) {
-  std::cout << "(" << token.first << "," << token.second << ")" << std::endl;
-}
-
-
 int main(int argc, char** argv) {
 #ifdef _WIN32
   _setmode(_fileno(stdin), _O_BINARY);
@@ -61,7 +46,7 @@ int main(int argc, char** argv) {
   BitStreamReader reader = BitStreamReader(header);
 
   if (reader.getN() < 9 || reader.getN() > 14 || reader.getS() < 1 || reader.getS() > 5 ||
-    reader.getL() < 3 || reader.getL() > 4) {
+      reader.getL() < 3 || reader.getL() > 4) {
     std::cerr << "Read arguments out of range: invalid input file." << std::endl;
     return 1;
   }
@@ -89,10 +74,9 @@ int main(int argc, char** argv) {
       std::pair<int, int> info = reader.getDouble();
       int dictIndex = window.getDictSize() - info.second;
       char* c = window.getFromDict(dictIndex);
-      for (int i = 0; i < info.first; i++) {
+      for (int i = 0; i < info.first; i++, c = window.getNext(c)) {
         std::cout << *c;
         window.addNoLab(*c);
-        c = window.getNext(c);
       }
       uncompressedSize += info.first;
       break;

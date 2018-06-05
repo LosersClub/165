@@ -69,20 +69,6 @@ bool parseArguments(int argc, char**argv, int* N, int* L, int* S, std::string* p
   return true;
 }
 
-// DELETE
-void printTriple(std::vector<char>& triple) {
-  std::cout << "(0," << triple.size() << ",";
-  for (char& c : triple) {
-    std::cout << c;
-  }
-  std::cout << ")" << std::endl;
-}
-
-// DELETE
-void printDouble(std::pair<int, int>& token) {
-  std::cout << "(" << token.first << "," << token.second << ")" << std::endl;
-}
-
 int main(int argc, char** argv) {
 #ifdef _WIN32
   _setmode(_fileno(stdout), _O_BINARY);
@@ -118,7 +104,6 @@ int main(int argc, char** argv) {
 
   std::string initString;
   initString.reserve(labSize + 1);
-
   while (initString.length() < labSize + 1 && file->hasNextChar()) {
     initString += file->readChar();
   }
@@ -152,12 +137,10 @@ int main(int argc, char** argv) {
       triple.push_back(*window.getFromLab(0));
       if (file->hasNextChar()) {
         window.add(file->readChar());
-      }
-      else {
+      } else {
         window.shift(1);
       }
-    }
-    else {
+    } else {
       if (lastTriple) {
         writer.writeTriple(triple);
         tokenCount++;
@@ -167,8 +150,7 @@ int main(int argc, char** argv) {
       tokenCount++;
       int len = result.first;
       while (len > 0 && file->hasNextChar()) {
-        unsigned char c = file->readChar();
-        window.add(c);
+        window.add(file->readChar());
         len--;
       }
       window.shift(len);

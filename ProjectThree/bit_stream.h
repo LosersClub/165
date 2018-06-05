@@ -1,6 +1,5 @@
 #pragma once
 #include <vector>
-#include <climits>
 
 class BitStream {
   public:
