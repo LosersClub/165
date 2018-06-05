@@ -1,7 +1,6 @@
 #include "hash_encoder.h"
 
-
-HashEncoder::HashEncoder(Window* window) : window(window), maxMatch(false){
+HashEncoder::HashEncoder(Window* window) : window(window), maxMatch(false) {
   if (this->window->getLabSize() > 0) {
     char* dictEnd = this->window->getFromDictPtr(0);
     int key = hash(dictEnd);
@@ -10,25 +9,25 @@ HashEncoder::HashEncoder(Window* window) : window(window), maxMatch(false){
 }
 
 std::pair<int, int> HashEncoder::getMatch() {
+  // Only one character left in LAB. No possible match and no
+  // entry to add.
   if (this->window->getLabSize() < 2) {
     modifyTable(nullptr, 0);
     return std::pair<int, int>{0, 0};
   }
-  char* labString = this->window->getFromLabPtr(0);
-  int key = hash(labString);
+
+  int key = hash(this->window->getFromLabPtr(0));
   // The bucket is empty, no match
   if (this->map[key].empty()) {
     modifyTable(this->window->getFromLabPtr(0), 1);
     return std::pair<int, int>{0, 0};
   }
-  auto iterator = this->map[key].begin();
+
+  //auto iterator = this->map[key].begin();
   int bestMatchLen = 0;
-  char* bestMatch = 0;
-  char* bucketEntry;
-  while (iterator != this->map[key].end()) {
-    // Loop through the strings in the bucket
+  char* bestMatch = nullptr;
+  for (char*& bucketEntry : this->map[key]) {
     int matchLen = 0;
-    bucketEntry = *iterator;
     char* temp = bucketEntry;
 
     // Compare the current string to the LAB
@@ -36,29 +35,22 @@ std::pair<int, int> HashEncoder::getMatch() {
       if (*temp != this->window->getFromLab(matchLen)) {
         break;
       }
-      matchLen++;
+      ++matchLen;
       // Move to the next character in the char sequence
-      if (this->window->atEndOfDict(temp)) {
-        temp = bucketEntry;
-      }
-      else {
-        temp = this->window->getNextInDict(temp);
-      }
-
+      temp = this->window->atEndOfDict(temp) ? bucketEntry : this->window->getNextInDict(temp);
     }
+
     // We've found a better match, so update our trackers
-    if (matchLen > bestMatchLen && matchLen > 1) {
+    if (matchLen > bestMatchLen) {
       bestMatchLen = matchLen;
       bestMatch = bucketEntry;
     }
-
     if (bestMatchLen == this->window->getLabSize()) {
       break;
     }
-    iterator++;
   }
-  modifyTable(this->window->getFromLabPtr(0), bestMatchLen);
-  
+
+  modifyTable(this->window->getFromLabPtr(0), bestMatchLen > 0 ? bestMatchLen : 1);
   return std::pair<int, int> {bestMatchLen, this->window->getOffset(bestMatch)};
 }
 
@@ -69,7 +61,6 @@ void HashEncoder::modifyTable(char* string, int len) {
 
 int HashEncoder::hash(char* string) {
   unsigned int key = 0;
-  // note: got rid of +1 on for condition; would cause indexing issues
   char* temp = string;
   for (int i = 0; i < MIN_MATCH_LENGTH; i++, temp = this->window->getNext(temp)) {
     key = ((key << 5) ^ *temp) % HASH_SIZE;
@@ -90,7 +81,6 @@ void HashEncoder::addString(char* string, int size) {
 }
 
 void HashEncoder::removeString(char* string, int size) {
-  //min size = 1
   char* temp = string;
   while (this->window->getDictSize() + size > this->window->getDictCap()) {
     int key = hash(temp);

@@ -9,10 +9,11 @@ class HashEncoder {
     Window* window;
     bool maxMatch;
     std::list<char*> map[HASH_SIZE];
+    int hash(char* stringStart);
+    
     void addString(char* string, int size);
     void removeString(char* string, int size);
-    int hash(char* stringStart);
-    void modifyTable(char* string, int len);
+    void modifyTable(char* string, int size);
 
   public:
     HashEncoder(Window* window);
