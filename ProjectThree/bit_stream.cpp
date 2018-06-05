@@ -1,7 +1,5 @@
 #include "bit_stream.h"
 
-#include <bitset>
-#include <iostream>
 #include <cstdio>
 
 BitStreamWriter::BitStreamWriter(unsigned char n, unsigned char l, unsigned char s)
@@ -34,11 +32,11 @@ void BitStreamWriter::writeDouble(int len, int offset) {
   this->write(offset - 1, this->nMask);
 }
 
-void BitStreamWriter::writeTriple(int size, std::vector<char> bytes) {
+void BitStreamWriter::writeTriple(std::vector<char> bytes) {
   this->write(0x00, this->lMask);
-  this->write(size, this->sMask);
-  for (int i = 0; i < size; i++) {
-    this->write(bytes[i], BitStream::bitMask);
+  this->write(bytes.size(), this->sMask);
+  for (char& byte : bytes) {
+    this->write(byte, BitStream::bitMask);
   }
 }
 
@@ -59,8 +57,7 @@ void BitStreamWriter::write(int value, Mask mask) {
       this->buffer |= temp >> (tempPos * -1);
       size -= this->pos;
       this->pos = 0;
-    }
-    else {
+    } else {
       this->buffer |= temp << (this->pos -= size);
       size = 0;
     }
@@ -133,8 +130,8 @@ std::pair<int, int> BitStreamReader::getDouble() {
   return { this->length, this->offset };
 }
 
-std::pair<int, std::vector<char>> BitStreamReader::getTriple() {
-  return { this->size, this->backup };
+std::vector<char> BitStreamReader::getTriple() {
+  return this->backup;
 }
 
 void BitStreamWriter::writeHeader() {
@@ -152,10 +149,6 @@ void BitStreamReader::readHeader(const unsigned char header[3]) {
 
 unsigned int BitStreamReader::getMaxN() {
   return 2 << (this->nMask->size - 1);
-}
-
-unsigned int BitStreamReader::getMaxS() {
-  return (2 << (this->sMask->size - 1));
 }
 
 int BitStreamReader::getN() {

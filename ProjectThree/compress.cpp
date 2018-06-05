@@ -138,7 +138,7 @@ int main(int argc, char** argv) {
   bool lastTriple = true;
   while (window.getLabSize() > 0) {
     if (lastTriple && triple.size() == maxTripleLength) {
-      writer.writeTriple(triple.size(), triple);
+      writer.writeTriple(triple);
       tokenCount++;
       lastTriple = false;
     }
@@ -159,7 +159,7 @@ int main(int argc, char** argv) {
     }
     else {
       if (lastTriple) {
-        writer.writeTriple(triple.size(), triple);
+        writer.writeTriple(triple);
         tokenCount++;
         lastTriple = false;
       }
@@ -176,7 +176,7 @@ int main(int argc, char** argv) {
     hasher.repair();
   }
   if (lastTriple) {
-    writer.writeTriple(triple.size(), triple);
+    writer.writeTriple(triple);
     tokenCount++;
   }
   writer.writeEOF();

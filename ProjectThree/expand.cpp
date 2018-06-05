@@ -77,8 +77,8 @@ int main(int argc, char** argv) {
     compressedSize++;
     switch (reader.read(stream->get())) {
     case BitStream::Triple: {
-      std::pair<int, std::vector<char>> triple = reader.getTriple();
-      for (char& c : reader.getTriple().second) {
+      std::vector<char> triple = reader.getTriple();
+      for (char& c : reader.getTriple()) {
         std::cout << c;
         uncompressedSize++;
         window.addNoLab(c);
