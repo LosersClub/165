@@ -1,7 +1,10 @@
 #include "file.h"
 #include "bit_stream.h"
 #include "window.h"
-
+#ifdef _WIN32
+#include <io.h>
+#include <fcntl.h>
+#endif
 #include <iostream>
 #include <bitset>
 
@@ -19,6 +22,9 @@ void printDouble(std::pair<int, int>& token) {
 
 
 int main(int argc, char** argv) {
+#ifdef _WIN32
+  _setmode(_fileno(stdin), _O_BINARY);
+#endif
   std::istream* stream = &std::cin;
   File* file = nullptr;
   if (argc > 2) {
@@ -35,7 +41,6 @@ int main(int argc, char** argv) {
       std::cerr << e.what() << std::endl;
       return 1;
     }
-    
   }
 
   unsigned char byte = stream->get();
