@@ -1,6 +1,6 @@
 #include "bit_stream.h"
 
-#include <cstdio>
+#include <iostream>
 
 /*
 ** The BitStreamWriter class handles encoding match tokens into bytes, and
@@ -22,7 +22,7 @@ BitStreamReader::~BitStreamReader() {
 }
 
 void BitStreamWriter::reset() {
-  std::putchar(this->buffer);
+  std::cout << this->buffer;
   this->byteCount++;
   this->pos = 8;
   this->buffer = 0x0;

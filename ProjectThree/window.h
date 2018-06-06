@@ -39,7 +39,7 @@ class Window {
     char* getFromDict(int index);
     char* getFromLab(int index);
     // Get the next character in the window
-    char* getNext(char* c);
+    char*& getNext(char*& c);
 
   private:
     char* array;

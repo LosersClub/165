@@ -63,12 +63,11 @@ char* Window::getFromLab(int index) {
   return this->array + ((index + this->split) % this->windowCap);
 }
 
-char* Window::getNext(char* c) {
-  char* temp = c;
-  if (++temp >= this->array + this->windowSize) {
-    temp = this->array;
+char*& Window::getNext(char*& c) {
+  if (++c >= this->array + this->windowSize) {
+    c = this->array;
   }
-  return temp;
+  return c;
 }
 
 bool Window::atEndOfDict(char*& c) const {
