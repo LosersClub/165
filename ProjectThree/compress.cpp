@@ -1,3 +1,6 @@
+// Anastasia Miles (90039862)
+// Kyle Bartz (27024310)
+
 #include "file.h"
 #include "window.h"
 #include "bit_stream.h"
