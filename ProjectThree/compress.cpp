@@ -14,6 +14,11 @@
 #include <chrono>
 #include <sstream>
 
+/*
+** The main for LZ compression.
+*/
+
+// Parses the input arguments, making sure they are valid
 bool parseArguments(int argc, char**argv, int* N, int* L, int* S, std::string* path) {
   if (argc > 5) {
     std::cerr << "Too many arguments." << std::endl;
@@ -69,12 +74,14 @@ bool parseArguments(int argc, char**argv, int* N, int* L, int* S, std::string* p
   return true;
 }
 
+// The main runner
 int main(int argc, char** argv) {
+// Handles Windows line endings
 #ifdef _WIN32
   _setmode(_fileno(stdout), _O_BINARY);
 #endif
 
-  // default values
+  // default parameter values
   int N = 11;
   int L = 4;
   int S = 3;
@@ -119,6 +126,7 @@ int main(int argc, char** argv) {
   std::vector<char> triple = { *window.getFromDict(0) };
   triple.reserve(maxTripleLength);
 
+  // Loop through the file, find matches, and encode the tokens
   long tokenCount = 0;
   bool lastTriple = true;
   while (window.getLabSize() > 0) {
@@ -162,6 +170,7 @@ int main(int argc, char** argv) {
     tokenCount++;
   }
   writer.writeEOF();
+
   std::chrono::high_resolution_clock::time_point endTime = std::chrono::high_resolution_clock::now();
   file->close();
 

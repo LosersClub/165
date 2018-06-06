@@ -2,6 +2,11 @@
 
 #include <cstdio>
 
+/*
+** The BitStreamWriter class handles encoding match tokens into bytes, and
+** the BitStreamReader class handles decoding bytes into match tokens.
+*/
+
 BitStreamWriter::BitStreamWriter(unsigned char n, unsigned char l, unsigned char s)
   : nMask({n}), lMask({l}), sMask({s}), buffer(0), pos(8), byteCount(0) { }
 
@@ -105,7 +110,7 @@ BitStream::Type BitStreamReader::read(unsigned char input) {
     this->pos += 8;
     return Type::Triple;
   }
-
+  // Double Token
   this->offset = this->read(buffer, *this->nMask, flag);
   if (!flag) {
     return Type::None;

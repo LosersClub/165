@@ -3,8 +3,12 @@
 #include <algorithm>
 #include <iostream>
 
-// initChars contains at index 0 the first char in the file, which should have been handled
-// and which belongs to the dict. The rest of the characters will fill the LAB.
+/*
+** The Window class implements a circular character buffer of a fixed. 
+** capacity. The Window is used for the sliding window in the Lempel-Ziv 
+** sliding window algorithm.
+*/
+
 Window::Window(int windowCap, int labCap, std::string initChars)  {
   this->windowCap = windowCap;
   this->dictCap = windowCap - labCap;
@@ -12,7 +16,7 @@ Window::Window(int windowCap, int labCap, std::string initChars)  {
   this->tail = 0;
   array = new char[windowCap];
 
-  for (int i = 0; i < initChars.length(); i++) {
+  for (size_t i = 0; i < initChars.length(); i++) {
     this->array[i] = initChars[i];
   }
   this->split = 1;

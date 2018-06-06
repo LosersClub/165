@@ -12,18 +12,23 @@
 #include <chrono>
 #include <sstream>
 
+/*
+** The main for EXPAND decompression.
+*/
+
 int main(int argc, char** argv) {
+// Handles Windows line endings
 #ifdef _WIN32
   _setmode(_fileno(stdin), _O_BINARY);
 #endif
-
+  // Default to std::cin
   std::istream* stream = &std::cin;
   File* file = nullptr;
   if (argc > 2) {
     std::cerr << "One parameter allowed: path to file to be decompressed." << std::endl;
     return 1;
   }
-
+  // If a file parameter was passed, update the istream to be the file
   if (argc == 2) {
     try {
       file = new File(argv[1]);
@@ -44,7 +49,7 @@ int main(int argc, char** argv) {
     }
   }
   BitStreamReader reader = BitStreamReader(header);
-
+  // Check the header bytes were valid
   if (reader.getN() < 9 || reader.getN() > 14 || reader.getS() < 1 || reader.getS() > 5 ||
       reader.getL() < 3 || reader.getL() > 4) {
     std::cerr << "Read arguments out of range: invalid input file." << std::endl;
@@ -58,6 +63,7 @@ int main(int argc, char** argv) {
   long uncompressedSize = 0;
   long compressedSize = 3;
   bool done = false;
+  // Decompress the bytes
   while (!done && stream->good()) {
     compressedSize++;
     switch (reader.read(stream->get())) {

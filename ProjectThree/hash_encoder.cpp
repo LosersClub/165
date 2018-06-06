@@ -1,9 +1,16 @@
 #include "hash_encoder.h"
 
+/*
+** The HashEncoder implements a hash table that is used to
+** quickly find a match between the look-ahead buffer and a
+** string in the dictionary.
+*/
+
 HashEncoder::HashEncoder(Window* window) : window(window), maxMatch(true) {
   this->repair();
 }
 
+// Gets the best match for the contents of the look-ahead buffer (LAB)
 std::pair<int, int> HashEncoder::getMatch() {
   // Only one character left in LAB. No possible match and no
   // entry to add.
@@ -13,26 +20,26 @@ std::pair<int, int> HashEncoder::getMatch() {
   }
 
   int key = hash(this->window->getFromLab(0));
-  // The bucket is empty, no match
+  // The relevant bucket is empty; no match exists
   if (this->map[key].empty()) {
     modifyTable(this->window->getFromLab(0), 1);
     return std::pair<int, int>{0, 0};
   }
-
-  //auto iterator = this->map[key].begin();
+  // Stores our best match so far
   int bestMatchLen = 0;
   char* bestMatch = nullptr;
+  // Loop through the bucket entries
   for (char*& bucketEntry : this->map[key]) {
     int matchLen = 0;
     char* temp = bucketEntry;
 
-    // Compare the current string to the LAB
+    // Compare the current bucket entry to the LAB
     while (matchLen < this->window->getLabSize()) {
       if (*temp != *this->window->getFromLab(matchLen)) {
         break;
       }
       ++matchLen;
-      // Move to the next character in the char sequence
+      // Move to the next character in the current entry's char sequence
       temp = this->window->atEndOfDict(temp) ? bucketEntry : this->window->getNext(temp);
     }
 
@@ -41,11 +48,13 @@ std::pair<int, int> HashEncoder::getMatch() {
       bestMatchLen = matchLen;
       bestMatch = bucketEntry;
     }
+    // We've found a maximum-length match, so quit early
     if (bestMatchLen == this->window->getLabSize()) {
       break;
     }
   }
-
+  // Update our table according to the match we found, so as to stay consistent
+  // with the Window
   modifyTable(this->window->getFromLab(0), bestMatchLen > 0 ? bestMatchLen : 1);
   return std::pair<int, int> {bestMatchLen, this->window->getOffset(bestMatch)};
 }

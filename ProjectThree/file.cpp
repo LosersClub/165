@@ -4,6 +4,10 @@
 #include <iostream>
 #include <stdexcept>
 
+/*
+** File is a utility class that makes reading from a file easier.
+*/
+
 File::File(std::string path) {
   this->isOpen = false;
   this->path = path;
