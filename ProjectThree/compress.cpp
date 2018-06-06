@@ -43,7 +43,13 @@ bool parseArguments(int argc, char**argv, int* N, int* L, int* S, std::string* p
           "Must be in the form of -N=# for args N, L, S." << std::endl;
         return false;
       }
-      int number = std::stoi(arg.substr(3));
+      int number = 0;
+      try {
+        number = std::stoi(arg.substr(3));
+      } catch (std::exception& e) {
+        std::cerr << argv[i][1] << " argument was not valid." << std::endl;
+        return false;
+      }
       if (argv[i][1] == 'N') {
         if (number < 9 || number > 14) {
           std::cerr << "N argument out of range." << std::endl;
